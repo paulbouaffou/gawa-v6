@@ -1,0 +1,62 @@
+# GAWA V6 – Statistiques et Visualisation
+
+Application **Flask + SQLModel** pour afficher et analyser des statistiques liées aux projets Gawa (Wikimedia), avec une interface moderne, thème sombre et graphes interactifs.
+
+---
+
+## 🚀 Fonctionnalités
+
+- **Backend Flask** avec **SQLModel** (SQLite)
+- API REST :
+  - `/api/stats/overview` – Vue d’ensemble
+  - `/api/stats/timeseries` – Séries temporelles
+  - `/api/stats/top` – Projets les plus actifs
+  - `/api/stats/quality` – Qualité et état d’avancement
+- **Frontend responsive** avec graphiques Chart.js
+- Thème sombre / clair (mode lune / mode soleil)
+- Filtres par date et par projet
+- Effets visuels : animations, hover sur cartes
+
+---
+
+## 📂 Structure du projet
+projet_gawa_v6/
+│
+├── conception_page_statistiques/   # Code Flask backend + UI
+│   ├── app.py                      # Point d’entrée Flask
+│   ├── templates/                  # Templates HTML (Jinja2)
+│   │   ├── layout.html
+│   │   ├── stats.html
+│   ├── static/                     # CSS, JS, images
+│       ├── css/gawa.css
+│
+├── requirements.txt
+├── README.md
+├── .gitignore
+---
+
+## 🛠️ Installation
+
+### 1. Cloner le dépôt
+```bash
+git clone https://github.com/paulbouaffou/gawa-v6.git
+cd gawa-v6/conception_page_statistiques
+
+### 2.Créer un environnement virtuel
+python3 -m venv venv
+source venv/bin/activate  # sous Linux/Mac
+venv\Scripts\activate     # sous Windows
+
+### 3. Installer les dépendances
+pip install -r ../requirements.txt
+
+### 4. ▶ Lancement 
+python app.py
+
+L’application sera disponible à l’adresse :
+➡ http://localhost:5000/stats
+
+🧪 Tests rapides
+	•	Ouvrir /stats pour voir l’interface.
+	•	Utiliser le sélecteur de dates ou de projets.
+	•	Passer en mode sombre ou clair avec le bouton prévu.
