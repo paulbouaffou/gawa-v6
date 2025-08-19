@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Résultats {% endblock %}
+
+{% block content %}
+  <div class="form-signin-2">
+    <div class="container">
+        <div class="alert alert-light" role="alert">
+        <h2>RÉSULTATS</h2>
+        <hr/>
+        Le résultat ci-dessous vous présente 
+      <strong>
+      {{nombre}}  
+      {% if nombre <= 1 %}
+        article
+      {% else %}
+        articles
+      {% endif %}
+      wikipédia
+      {{ type_article | lower }}</strong>
+       lié à la Côte d'Ivoire. Mais il est important de savoir que dans la base de données, il existe au total <strong>{{total}} articles</strong> ayant ce type de problème".
+    </div>
+      <hr/>
+      <ol>
+        {% for article in articles %}
+          <li style="text-align: left;"><a href="https://fr.wikipedia.org/wiki/{{article.replace('_', ' ')}}" target="_blank">{{article.replace('_', ' ')}}</a></li>
+        {% endfor %}
+      </ol>
+      <textarea id="code" rows="10" style="width:100%;">{{ texte_a_copier }}</textarea>
+      <br/>
+      <p>Cliquez sur le lien de<a href="{{ doc_url }}" target="_blank"> la documentation sur les articles {{ type_article | lower }}</a> afin de connaître la procédure à suivre pour la maintenance de ce type d'article.
+      <br/>Cliquez sur le bouton <strong>Copier le texte</strong> pour copier les articles affichés et les coller dans votre brouillon ou page Event Wikipédia via le wikicode.</p>
+      <br/>
+      <button onclick="copier()"class="btn btn-primary">Copier le texte</button> <a href="{{ url_for('formulaire') }}" class="btn btn-primary">Retour</a>
+      <br/> 
+      <br/> 
+      <br/> 
+      <br/> 
+      <br/> 
+    </div>
+    <script>
+      function copier() {
+        let text = document.getElementById("code");
+        text.select();
+        document.execCommand("copy");
+        alert("Contenu copié !");
+      }
+    </script>
+  </div>
+{% endblock %}
