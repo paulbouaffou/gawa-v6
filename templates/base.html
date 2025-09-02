@@ -55,9 +55,10 @@
         </a>
 
         <!-- Bouton hamburger -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarGAWA" aria-controls="navbarGAWA" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
+        <button class="navbar-toggler custom-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarGAWA" aria-controls="navbarGAWA" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="hamburger-icon"></span>
         </button>
+
 
         <!-- Liens du menu -->
         <div class="collapse navbar-collapse justify-content-center" id="navbarGAWA">
@@ -89,18 +90,8 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/accordion.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/defile.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/canvasjs.js') }}"></script>
-    <script>
-            (function () {
-          const btn = document.getElementById('hamburger');
-          const menu = document.getElementById('menu');
-
-          btn.addEventListener('click', function () {
-            menu.classList.toggle('open');
-            const expanded = this.getAttribute('aria-expanded') === 'true';
-            this.setAttribute('aria-expanded', String(!expanded));
-          });
-        })();
-    </script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/canvasjs.js') }}"></script> 
+    <!-- Bootstrap JS avec Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>

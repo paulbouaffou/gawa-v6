@@ -1,3 +1,6 @@
+/* ==============================
+   RESET & BASE
+============================== */
 html,
 body {
   height: 100%;
@@ -21,13 +24,22 @@ canvas {
   vertical-align: bottom;
 }
 
+span {
+  color: red;
+  text-align: center;
+  font-size: small;
+}
 
+/* ==============================
+   LAYOUT CONTAINERS
+============================== */
 .container {
   max-width: 800px;
   margin: 0 auto;
   padding: 30px;
   text-align: center;
 }
+
 .header {
   margin-bottom: 40px;
 }
@@ -39,50 +51,6 @@ canvas {
   font-size: 18px;
 }
 
-.badge {
-  background-color: #fce96a;
-  color: #1a1a1a;
-  font-size: 0.6rem;
-  font-weight: bold;
-  padding: 0.3rem 0.6rem;
-  border-radius: 5px;
-  vertical-align: middle;
-}
-
-form input, form select, form button {
-  margin: 10px 0;
-  padding: 10px;
-  width: 90%;
-  max-width: 500px;
-  font-size: 16px;
-  border-radius: 6px;
-  border:none;
-}
-form button {
-  background-color: #023496;
-  color: white;
-  cursor: pointer;
-}
-
-
-/*------------Défilé de mots-------------*/
-#app{
-  color: #023496;
-  font-size: inherit;
-}
-
-/* ---- tsparticles container ---- */
-#wave {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-color: #0d47a1;
-  background-image: url("");
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: 50% 50%;
-}
-
 .bloc-1 {
   width: 100%;
   max-width: 400px;
@@ -92,7 +60,8 @@ form button {
   background-color: #fff;
   position: relative;
   border-radius: 10px;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2),
+              0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 .bloc-2 {
@@ -104,49 +73,6 @@ form button {
   background-color: #e6e7e8;
 }
 
-/*-------Style de la navbar------*/
-.navbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      background: #ffffff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      display: flex;
-      justify-content: center;
-      padding: 20px 20px;
-      z-index: 1000;
-    }
-
-.navbar ul {
-      list-style: none;
-      display: flex;
-      gap: 40px;
-      margin: 0;
-      padding: 0;
-    }
-
-.navbar ul li {
-      display: inline;
-    }
-
-.navbar ul li a {
-      text-decoration: none;
-      font-size: 14px;
-      color: #000;
-      transition: color 0.3s, border-bottom 0.3s;
-      padding-bottom: 4px;
-    }
-
-.nav-link.active {
-  color: #023496 !important;
-  border-bottom: 4px solid #023496;
-}
-.nav-link:hover {
-  color: #023496 !important;
-  border-bottom: 4px solid #023496;
-}
-
 .form-signin {
   width: 100%;
   max-width: 480px;
@@ -155,7 +81,6 @@ form button {
   margin: auto;
   background-color: #e6e7e8;
 }
-
 .form-signin .checkbox {
   font-weight: 400;
 }
@@ -170,67 +95,138 @@ form button {
 .form-signin .form-control:focus {
   z-index: 2;
 }
-
-.form-signin input[type="text"] {
-  margin-bottom: 10px;
-  border-radius: 100px;
-}
-
-.form-signin input[type="text"]:hover {
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-}
-
-.form-signin input[type="number"] {
-  margin-bottom: 10px;
-  border-radius: 100px;
-}
-
-.form-signin input[type="number"]:hover {
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-}
-
+.form-signin input[type="text"],
+.form-signin input[type="number"],
 .form-signin select {
   margin-bottom: 10px;
   border-radius: 100px;
 }
-
+.form-signin input[type="text"]:hover,
+.form-signin input[type="number"]:hover,
 .form-signin select:hover {
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2),
+              0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
-/* -----Bouton------*/
+/* ==============================
+   COMPONENTS
+============================== */
+.badge {
+  background-color: #fce96a;
+  color: #1a1a1a;
+  font-size: 0.6rem;
+  font-weight: bold;
+  padding: 0.3rem 0.6rem;
+  border-radius: 5px;
+  vertical-align: middle;
+}
+
+form input,
+form select,
+form button {
+  margin: 10px 0;
+  padding: 10px;
+  width: 90%;
+  max-width: 500px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: none;
+}
+
+form button {
+  background-color: #023496;
+  color: white;
+  cursor: pointer;
+}
 
 .btn-primary {
-          padding-left: 50px;
-          padding-right: 50px;
-          border-radius: 5px;
-        }
-
-
-/* -----Tableau------*/
+  padding-left: 50px;
+  padding-right: 50px;
+  border-radius: 5px;
+}
 
 .table-responsive {
   overflow-x: auto;
 }
-
-
-/* -----Image------*/
 
 .image1 {
   width: 70%;
   height: 30%;
 }
 
-
-/* -----Message d'erreur !------*/
-
-span {
-  color: red;
-  text-align: center;
-  font-size: small;
+.a-color {
+  color: #ff0000;
+}
+.a-color:hover,
+.a-color:active {
+  color: #ff0000;
 }
 
-/* Float four columns side by side */
+/* ==============================
+   NAVBAR
+============================== */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  padding: 20px 20px;
+  z-index: 1000;
+}
+.navbar ul {
+  list-style: none;
+  display: flex;
+  gap: 40px;
+  margin: 0;
+  padding: 0;
+}
+.navbar ul li {
+  display: inline;
+}
+.navbar ul li a {
+  text-decoration: none;
+  font-size: 14px;
+  color: #000;
+  transition: color 0.3s, border-bottom 0.3s;
+  padding-bottom: 4px;
+}
+.nav-link.active {
+  color: #023496 !important;
+  border-bottom: 4px solid #023496;
+}
+.nav-link:hover {
+  color: #023496 !important;
+  border-bottom: 4px solid #023496;
+}
+
+/* ==============================
+   SPECIAL EFFECTS
+============================== */
+/* Défilé de mots */
+#app {
+  color: #023496;
+  font-size: inherit;
+}
+
+/* tsparticles container */
+#wave {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #0d47a1;
+  background-image: url("");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 50% 50%;
+}
+
+/* ==============================
+   GRID SYSTEM
+============================== */
 .column {
   width: 100%;
   max-width: 300px;
@@ -238,34 +234,22 @@ span {
   margin-bottom: 10px;
   margin-left: 10px;
 }
-
-/* Remove extra left and right margins, due to padding */
-.row {margin-left: none; margin-right: none;}
-
-/* Clear floats after the columns */
+.row {
+  margin-left: none;
+  margin-right: none;
+}
 .row:after {
   content: "";
   display: table;
   clear: both;
 }
 
-.a-color{
-  color: #ff0000;
-}
-
-.a-color:hover{
-  color: #ff0000;
-}
-.a-color:active{
-  color: #ff0000;
-}
-
-/* ----------------------------------------FOOTER------------------------------------------------*/
-
-/* footer-wrapper */
-footer{
-  display:block;
-  overflow:hidden;
+/* ==============================
+   FOOTER
+============================== */
+footer {
+  display: block;
+  overflow: hidden;
   border-radius: 0px;
   width: 100%;
   height: auto;
@@ -274,74 +258,116 @@ footer{
   position: fixed;
   padding: 25px;
   font-size: 12px;
-} 
+}
 
-/* -------------------------- REDIMENSIONNEMENT POUR LA VERSION MOBILE---------------------------*/
+/* Supprimer le contour Bootstrap par défaut */
+.custom-toggler {
+  border: none;
+  padding: 0;
+}
 
-/* ------------ Redimensionnement pour la version mobile en portrait ------------*/ 
+/* Style des 3 barres */
+.hamburger-icon {
+  display: block;
+  width: 35px;
+  height: 3px;
+  background-color: #000;
+  position: relative;
+  border-radius: 2px;
+  transition: background-color 0.3s ease;
+}
 
- @media (max-width: 768px) {
-      
-  /* ------------ Redimensionnement du logotype pour la version mobile en portrait ------------*/  
+.hamburger-icon::before,
+.hamburger-icon::after {
+  content: "";
+  display: block;
+  width: 35px;
+  height: 3px;
+  background-color: #000;
+  position: absolute;
+  left: 0;
+  border-radius: 2px;
+  transition: transform 0.3s ease, top 0.3s ease;
+}
 
-        .image {
-          width: 80%;
-          height: 40%;
-        }
+.hamburger-icon::before {
+  top: -8px;
+}
 
-        /* ----------- Redimensionnement du message d'erreurs pour la version mobile  en portrait-----------*/
+.hamburger-icon::after {
+  top: 8px;
+}
 
-         span {
-          font-size: x-small;
-        }
+/* Quand le menu est ouvert (aria-expanded = true) */
+.navbar-toggler[aria-expanded="true"] .hamburger-icon {
+  background-color: transparent; /* cache la barre du milieu */
+}
 
-        .btn-primary {
-          padding-left: 40px;
-          padding-right: 40px;
-          border-radius: 5px;
-        }
+.navbar-toggler[aria-expanded="true"] .hamburger-icon::before {
+  top: 0;
+  transform: rotate(45deg);
+}
 
-        .text_gauche {
-          float: left;
-          padding: auto;
-          text-align: center;
-        }
+.navbar-toggler[aria-expanded="true"] .hamburger-icon::after {
+  top: 0;
+  transform: rotate(-45deg);
+}
 
-        .text_droit {
-          float: left;
-          padding-left: auto;
-          padding-right: auto;
-          text-align: center;
-          word-spacing: 10px;
-          margin-right: 
-        }
 
-        .bloc-1 {
+/* ==============================
+   RESPONSIVE
+============================== */
+/* Portrait mobile */
+@media (max-width: 768px) {
+  .image {
+    width: 80%;
+    height: 40%;
+  }
+  span {
+    font-size: x-small;
+  }
+  .btn-primary {
+    padding-left: 40px;
+    padding-right: 40px;
+    border-radius: 5px;
+  }
+  .text_gauche {
+    float: left;
+    padding: auto;
+    text-align: center;
+  }
+  .text_droit {
+    float: left;
+    padding-left: auto;
+    padding-right: auto;
+    text-align: center;
+    word-spacing: 10px;
+    margin-right: /* valeur manquante */;
+  }
+  .bloc-1 {
     width: 100%;
-    max-width: 340px;
-    padding: 25px;
-    padding-top: 30px;
+    max-width: 320px;
+    padding: 20px;
+    padding-top: 25px;
     margin: auto;
     background-color: #fff;
     position: relative;
     border-radius: 10px;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2),
+                0 6px 20px 0 rgba(0, 0, 0, 0.19);
   }
-
-        h4 {
-          font-size: 20px;
+  h4 {
+    font-size: 20px;
   }
-
-        .col-4 {
+  .col-4 {
     flex-basis: 100%;
     max-width: 100%;
   }
-
   .table-responsive {
-        width: 100%; /* Utiliser toute la largeur de l'écran */
-    }
+    width: 100%;
+  }
+} 
 
-}
 
 /* Responsive columns */
 @media screen and (max-width: 600px) {
@@ -353,12 +379,9 @@ footer{
   }
 }
 
-
-/* ------------ Redimensionnement pour la version mobile en paysage ------------*/ 
-
-/* Styles pour les écrans en format paysage (horizontal) */
+/* Paysage mobile */
 @media screen and (min-width: 768px) {
-    
-    }
+  /* vide mais prêt pour ajout */
+
 }
 
