@@ -12,8 +12,8 @@
     <!-- Custom styles for this template -->
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
 
-    <!-- Custom styles for the page genre -->
-    <link href="{{ url_for('static', filename='css/accordion.css') }}" rel="stylesheet">
+    <!-- Custom styles for this templates -->
+    <link href="{{ url_for('static', filename='css/wave.css') }}" rel="stylesheet">
 
     <!-- Font family -->
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
@@ -39,24 +39,68 @@
     </style>
   </head>
   <body class="text-center">
-    {% block content %}{% endblock %}
-    <footer>
-      <div id="footer-wrapper">
-        <div class="footer-limit" id="footer-limit">
-          <div class="footer no-items section" id="footer-1"></div>
+    <!-- wave container -->
+    <div class="canvas">
+       <div class="wave"></div>
+       <div class="wave"></div>
+       <div class="wave"></div>
+    </div>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top shadow-sm">
+      <div class="container-fluid">
+
+        <!-- Logo visible SEULEMENT en mobile -->
+        <a class="navbar-brand d-lg-none" href="{{ url_for('home') }}">
+          <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Logo GAWA" height="30">
+        </a>
+
+        <!-- Bouton hamburger -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarGAWA" aria-controls="navbarGAWA" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Liens du menu -->
+        <div class="collapse navbar-collapse justify-content-center" id="navbarGAWA">
+          <ul class="navbar-nav gap-3">
+            <li class="nav-item">
+              <a class="nav-link active" href="#">Accueil</a>
+            </li>
+            <li class="nav-item"><a class="nav-link" href="#">Discussion</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Événements</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Statistiques</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">À propos</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Aide</a></li>
+          </ul>
         </div>
       </div>
-      <!-- Footer menu start -->
-
+    </nav>
+    {% block content %}{% endblock %}
+    <footer>
+      <div class="credit-wrapper">
+        <div class="creditfooter">
+          Développé par <a href="https://wikimedia.ci/" title="Wikimedia Côte d'Ivoire">Wikimedia Côte d'Ivoire</a> et disponible sur <a href="https://gitlab.wikimedia.org/toolforge-repos/gawa" title="GitLab Wikimedia">GitLab Wikimedia</a> sous la licence MIT.
+        </div>
+      </div>
+    </footer>
     <script src="https://cdn.jsdelivr.net/npm/tsparticles@1.28.0/dist/tsparticles.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@webcomponents/webcomponentsjs@2.5.0/custom-elements-es5-adapter.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@webcomponents/webcomponentsjs@2.5.0/webcomponents-loader.js"></script>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/web-particles@1.1.0/dist/web-particles.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/@webcomponents/webcomponentsjs@2.5.0/webcomponents-loader.js"></script> 
     <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/accordion.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/defile.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/canvasjs.js') }}"></script>
+    <script>
+            (function () {
+          const btn = document.getElementById('hamburger');
+          const menu = document.getElementById('menu');
+
+          btn.addEventListener('click', function () {
+            menu.classList.toggle('open');
+            const expanded = this.getAttribute('aria-expanded') === 'true';
+            this.setAttribute('aria-expanded', String(!expanded));
+          });
+        })();
+    </script>
   </body>
 </html>

@@ -49,4 +49,4 @@ class Words {
 	}
 }
 
-new Words(["orphelins", "à wikifier", "à sourcer", "à vérifier l'admissibilité", "très courts et oubliés", "non neutres", "à problèmes multiples", "promotionnels", "à style non encyclopédique"]);
+new Words(["orphelins", "générés par l'intelligence artificielle", "à wikifier", "à sourcer", "très courts et oubliés", "non neutres", "à problèmes multiples", "promotionnels", "à style non encyclopédique"]);
