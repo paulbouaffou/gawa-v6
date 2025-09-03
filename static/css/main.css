@@ -21,7 +21,6 @@ body {
 
 canvas {
   display: block;
-  vertical-align: bottom;
 }
 
 span {
@@ -64,13 +63,56 @@ span {
               0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
+/* Header avec image de fond */
+.bloc-2-header {
+      background: url("../images/img-header.png") no-repeat center center;
+      background-size: cover;
+      height: 90px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 10px 10px 0 0;
+    }
+
+.bloc-2-header h1 {
+      color: white;
+      font-size: 40px;
+      font-weight: bolder;
+      margin-top: 20px;
+    }
+
+    /* Body */
+.bloc-2-body {
+      padding: 20px;
+      display: none; /* Masqué par défaut */
+    }
+
+.bloc-2-body p {
+      font-size: 16px;
+    }
+
+.bloc-2 p {
+      font-size: 16px;
+      margin-top: 20px;
+      margin-left: 20px;
+      margin-right: 20px;
+    }
+
+
+.toggle-btn:hover {
+      background-color: #001bbb;
+    }
+
 .bloc-2 {
   width: 100%;
-  max-width: 1200px;
-  padding: 30px;
-  padding-top: 25px;
+  max-width: 600px;
+  padding-bottom: 20px;
   margin: auto;
-  background-color: #e6e7e8;
+  background-color: #fff;
+  position: relative;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2),
+              0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 .form-signin {
@@ -342,7 +384,6 @@ footer {
     padding-right: auto;
     text-align: center;
     word-spacing: 10px;
-    margin-right: /* valeur manquante */;
   }
   .bloc-1 {
     width: 100%;
@@ -356,6 +397,52 @@ footer {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2),
                 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   }
+
+  .bloc-2 {
+  width: 100%;
+  max-width: 320px;
+  padding-bottom: 20px;
+  margin: auto;
+  background-color: #fff;
+  position: relative;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2),
+              0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.bloc-2-header {
+      background: url("../images/img-header.png") no-repeat center center;
+      background-size: cover;
+      height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 10px 10px 0 0;
+    }
+
+.bloc-2-header h1 {
+      color: white;
+      font-size: 25px;
+      font-weight: bolder;
+      margin-top: 10px;
+    }
+
+    /* Body */
+.bloc-2-body {
+      padding: 20px;
+      display: none; /* Masqué par défaut */
+    }
+
+.bloc-2-body p {
+      font-size: 14px;
+      margin-top: 20px;
+    }
+
+.bloc-2 p {
+      font-size: 14px;
+      margin-top: 20px;
+    }
+
   h4 {
     font-size: 20px;
   }

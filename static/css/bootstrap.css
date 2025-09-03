@@ -435,7 +435,8 @@ h6, .h6 {
 }
 
 hr {
-  margin-top: 1rem;
+  margin-left: 20px;
+  margin-right: 20px;
   margin-bottom: 1rem;
   border: 0;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
@@ -8043,7 +8044,7 @@ button.bg-dark:focus {
 
 .mb-4,
 .my-4 {
-  margin-bottom: 1.5rem !important;
+  margin-bottom: 2rem !important;
 }
 
 .ml-4,

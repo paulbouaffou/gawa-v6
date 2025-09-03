@@ -3,30 +3,16 @@
 {% block title %}Evénements {% endblock %}
 
 {% block content %}
-    <div class="container">
-      <div class="bloc-2">
-        <div class="container">
-          <div class="alert alert-light" role="alert">
-          <h2>ÉVÉNEMENTS</h2>
-          <hr/>
-          Il est présenté ci-dessous, les événements organisés avec les articles listés par l'outil <strong>GAWA</strong>
-      </div>
-        <hr/>
-        {% for mois, liste in evenements_par_mois.items() %}
-        <h3>Mois : {{ mois }}</h3>
-        <ul>
-          {% for evt in liste %}
-            <li>
-              <strong><a href="{{ evt.lien }}" target="_blank">{{ evt.nom }}</a></strong> – 
-              Type: Articles {{ evt.type | lower }} – 
-              Nombre: {{ evt.nombre }} – 
-              Ajouté le: {{ evt.date }}
-            </li>
-          {% endfor %}
-        </ul>
-      {% endfor %}
-      <a href="{{ url_for('formulaire') }}" class="btn btn-primary">Retour</a>
-    </div>
-  </div>
-</div>
+
+	<div class="bloc-2">
+		<div class="bloc-2-header">
+	      <h1>EVENEMENTS</h1>
+	    </div>
+	    <p>Les événements organisés avec l'outil GAWA s'afficheront ici...</p>
+	    <div class="bloc-2-body" id="blocBody">
+	    </div>
+	    <hr>
+	    <button class="toggle-btn btn btn-primary" onclick="toggleContent()">Afficher plus</button>
+	</div>
+
 {% endblock %}

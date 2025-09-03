@@ -4,12 +4,11 @@
 
 {% block content %} 
 <div class="bloc-1">
-    <img class="mb-4 image1" src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Gawa">
-<h4>Bienvenue sur GAWA,<br/>l'outil permettant de générer
-<br/>des articles <span id="app"></span>
-<br/>sur Wikipédia en français</h4>
-<hr>
-<a href="{{ url_for('home') }}" class="btn btn-primary">Générer</a>
-  </div>
+  <img class="mb-4 image1" src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Gawa">  
+  <h4>Bienvenue sur GAWA,<br/>l'outil permettant de générer
+  <br/>des articles <span id="app"></span>
+  <br/>sur Wikipédia en français</h4>
+  <hr>
+  <a href="{{ url_for('home') }}" class="btn btn-primary">Générer</a>
 </div>
 {% endblock %}

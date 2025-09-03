@@ -2,13 +2,17 @@
 
 {% block title %}Aide{% endblock %}
 
-{% block content %}
-<div class="bloc-1">
-    <h4>AIDE</h4>
-    <hr/>
-    <p>Cette page est en maintenance... et elle présentera des tutoriels de prise en main de l'outil Gawa.</p>
-    <hr/>
-    <a href="{{ url_for('home') }}" class="btn btn-primary">Retour</a>
-</div>
+{% block content %} 
+
+	<div class="bloc-2">
+		<div class="bloc-2-header">
+	      <h1>AIDE</h1>
+	    </div>
+	    <p>Le contenu de page d'aide s'affichera ici...</p>
+	    <div class="bloc-2-body" id="blocBody">
+	    </div>
+	    <hr>
+	    <button class="toggle-btn btn btn-primary" onclick="toggleContent()">Afficher plus</button>
+	</div>
 
 {% endblock %}

@@ -1,35 +1,16 @@
 {% extends 'base.html' %}
 
-{% block title %}Formulaire pour générer des articles à améliorer liés à la Côte d'Ivoire pour votre événement{% endblock %}
+{% block title %}Formulaire{% endblock %}
 
-{% block content %}
-  <div class="container">
-    <header class="header">
-      <h1>GAWA <span class="badge">Version 6 (bêta)</span></h1>
-      <p>Quel type d'articles à améliorer voudriez-vous <br/>demander à cet outil pour votre événement ?</p>
-    </header>
-
-    {% if error %}
-      <p style="color: red;">{{ error }}</p>
-    {% endif %}
-
-    <form method="post">
-      <input type="text" name="nom" placeholder="Nom de l'événement" required><br>
-      <input type="url" name="lien" placeholder="Lien du tableau de bord (outreachdashboard...)" required><br>
-      <select name="type_article" required>
-        <option value="">Choisir le type</option>
-        {% for label in types %}
-          <option value="{{ label }}">{{ label }}</option>
-        {% endfor %}
-      </select><br>
-      <input type="number" name="nombre" placeholder="Nombre d'articles" required><br>
-      <button type="submit">Afficher</button>
-    </form>
-    <br>
-    <br>
-    <br>
-  </div>
-</body>
-</html>
-
+{% block content %} 
+	<div class="bloc-2">
+		<div class="bloc-2-header">
+	      <h1>FORMULAIRE</h1>
+	    </div>
+	    <p>Le formulaire s'affichera ici...</p>
+	    <div class="bloc-2-body" id="blocBody">
+	    </div>
+	    <hr>
+	    <button class="toggle-btn btn btn-primary" onclick="toggleContent()">Afficher plus</button>
+	</div>
 {% endblock %}

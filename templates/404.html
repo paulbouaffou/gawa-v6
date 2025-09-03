@@ -3,10 +3,14 @@
 {% block title %}Page non trouvée{% endblock %}
 
 {% block content %}
-  <div class="bloc-1">
-      <h4>Erreur 404</h4>
-      <hr/>
-      <p>La page que vous cherchez n'existe pas.</p>
-      <a href="{{ url_for('home') }}" class="btn btn-primary">Retour à l'accueil</a>
-  </div>
+
+	<div class="bloc-2">
+		<div class="bloc-2-header">
+	      <h1>ERREUR 404</h1>
+	    </div>
+	    <p>Cette page que vous recherchez n'existe pas. Veuillez cliquer sur le bouton ci-dessous pour vous rendre sur la page d'accueil de l'outil GAWA.</p>
+	    <hr>
+	    <a href="{{ url_for('home') }}" class="btn btn-primary">Retour</a>
+	</div>
+
 {% endblock %}
