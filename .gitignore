@@ -1,5 +1,25 @@
-venv/
+
+# Python
 __pycache__/
-logs/
 *.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.env
+.venv/
+venv/
+
+# VSCode / OS
+.vscode/
 .DS_Store
+
+# SQLite / données locales
+*.db
+instance/
+gawa.db
+*.db-*
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
