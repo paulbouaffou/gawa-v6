@@ -1,16 +1,327 @@
-{% extends 'base.html' %}
+{% extends "layout.html" %}
 
-{% block title %}Statistiques{% endblock %}
+{% block title %}Statistiques – GAWA V6{% endblock %}
+
+{% block head %}
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
 
 {% block content %}
-	<div class="bloc-2">
-		<div class="bloc-2-header">
-	      <h1>STATISTIQUES</h1>
-	    </div>
-	    <p>Les statistiques de la sixième version<br/> de l'outil GAWA, s'afficheront sur cette page...</p>
-	    <div class="bloc-2-body" id="blocBody">
-	    </div>
-	    <hr>
-	    <button class="toggle-btn btn btn-primary" onclick="toggleContent()">Afficher plus</button>
-	</div>
-{% endblock %} 
+  <h1 class="mb-1">GAWA V6 — Statistiques</h1>
+  <p class="text-muted mb-4">Données de démonstration. Connexion à la base réelle prévue plus tard.</p>
+
+  <div class="d-flex justify-content-end mb-2">
+    <button id="theme-toggle" class="btn btn-sm btn-outline-light">🌙 Mode lune</button>
+  </div>
+
+  <!-- Filtres -->
+  <div class="gawa-card mb-3 reveal">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Du</label>
+        <input id="f-from" type="date" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Au</label>
+        <input id="f-to" type="date" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Projet</label>
+        <select id="f-project" class="form-select">
+          <option value="">(Tous)</option>
+          <!-- options injectées par JS depuis /api/catalog/projects -->
+        </select>
+      </div>
+      <!-- AJOUT : Recherche libre "Type de bandeaux" -->
+      <div class="col-md-3">
+        <label class="form-label">Type de bandeaux</label>
+        <input id="f-banner" type="text" class="form-control" placeholder="ex. ébauche, wikifier, à sourcer…">
+      </div>
+
+      <div class="col-md-3">
+        <button id="f-apply" class="btn btn-primary w-100">Appliquer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="row g-3 mb-4 gawa-kpi">
+    <div class="col-md-3">
+      <div class="gawa-card text-center reveal kpi-card">
+        <div class="kpi-label">Queries</div>
+        <div id="kpi-queries" class="kpi-value">--</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="gawa-card text-center reveal kpi-card">
+        <div class="kpi-label">Suggestions</div>
+        <div id="kpi-suggestions" class="kpi-value">--</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="gawa-card text-center reveal kpi-card">
+        <div class="kpi-label">Assignations</div>
+        <div id="kpi-assignments" class="kpi-value">--</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="gawa-card text-center reveal kpi-card">
+        <div class="kpi-label">Contributeurs</div>
+        <div id="kpi-contributors" class="kpi-value">--</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activité -->
+  <div class="gawa-card mb-4 reveal">
+    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-2">
+      <h4 class="m-0">Activité</h4>
+      <div class="d-inline-flex align-items-center gap-2">
+        <label for="metric" class="form-label m-0">Métrique</label>
+        <select id="metric" class="form-select">
+          <option value="queries">Queries</option>
+          <option value="suggestions">Suggestions</option>
+          <option value="assignments">Assignations</option>
+          <option value="contributors">Contributeurs</option>
+        </select>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="timeseriesChart"></canvas>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="gawa-card reveal">
+        <h4 id="top-title" class="mb-3">Top projets — tous projets confondus</h4>
+        <div class="chart-wrap"><canvas id="topProjectsChart"></canvas></div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="gawa-card reveal">
+        <h4 class="mb-3">Qualité</h4>
+        <div class="row g-3 align-items-center">
+          <div class="col-sm-6"><div class="chart-wrap"><canvas id="qualityChart"></canvas></div></div>
+          <div class="col-sm-6 d-flex flex-column gap-2">
+            <span class="gawa-chip"><b>Longueur moy.</b> : <span id="avg-length">—</span></span>
+            <span class="gawa-chip"><b>Vues 30j</b> : <span id="sum-views">—</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="error" class="alert alert-danger mt-3 d-none"></div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+  // ===== helpers DOM & URL
+  const $ = (id) => document.getElementById(id);
+  function buildURL(path, params) {
+    const usp = new URLSearchParams();
+    Object.entries(params || {}).forEach(([k,v])=>{
+      if(v!==undefined && v!==null && String(v).trim()!=="") usp.set(k, v);
+    });
+    const qs = usp.toString();
+    return qs ? `${path}?${qs}` : path;
+  }
+  async function fetchJSON(url){
+    const r = await fetch(url);
+    if(!r.ok) throw new Error(`${r.status} on ${url}`);
+    return r.json();
+  }
+
+  // ===== chart holders
+  let lineChart, barChart, doughnutChart;
+
+  // ===== charge les projets dans le <select>
+  async function loadProjects(){
+    try{
+      const data = await fetchJSON('/api/catalog/projects');
+      const sel = $('f-project');
+      if (!sel) return;
+      // reset
+      sel.innerHTML = '<option value="">(Tous)</option>';
+      for (const p of (data.projects||[])) {
+        const opt = document.createElement('option');
+        opt.value = p.slug;
+        opt.textContent = `${p.slug} — ${p.label}`; // aide visuelle : slug + libellé
+        opt.dataset.label = p.label;                // pour l’UI (titre "Top projets")
+        sel.appendChild(opt);
+      }
+    }catch(e){ console.warn('projects fail', e); }
+  }
+
+  // ===== KPI
+  async function loadOverview(){
+    try{
+      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value;
+      const banner = $('f-banner')?.value; // <-- AJOUT
+      const url = buildURL('/api/stats/overview', {from, to, project, banner});
+      const data = await fetchJSON(url);
+      $('kpi-queries').textContent      = (data.counts?.queries ?? 0).toLocaleString('fr-FR');
+      $('kpi-suggestions').textContent  = (data.counts?.suggestions ?? 0).toLocaleString('fr-FR');
+      $('kpi-assignments').textContent  = (data.counts?.assignments ?? 0).toLocaleString('fr-FR');
+      $('kpi-contributors').textContent = (data.counts?.contributors ?? 0).toLocaleString('fr-FR');
+    }catch(e){
+      console.warn('overview fail', e);
+      $('kpi-queries').textContent = $('kpi-suggestions').textContent =
+      $('kpi-assignments').textContent = $('kpi-contributors').textContent = '—';
+      showErrorBanner();
+    }
+  }
+
+  // ===== courbe Activité
+  async function loadTimeseries(){
+    try{
+      const metric = $('metric')?.value || 'queries';
+      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value;
+      const banner = $('f-banner')?.value; // <-- AJOUT
+      const url = buildURL('/api/stats/timeseries', {metric, from, to, project, banner});
+      const data = await fetchJSON(url);
+
+      const labels = (data.points||[]).map(p=>p.t);
+      const values = (data.points||[]).map(p=>p.v);
+
+      const ctx = $('timeseriesChart')?.getContext('2d');
+      if(!ctx) return;
+      lineChart && lineChart.destroy();
+      const grad = ctx.createLinearGradient(0,0,0,ctx.canvas.height*0.9);
+      grad.addColorStop(0, 'rgba(13,110,253,.30)');
+      grad.addColorStop(1, 'rgba(13,110,253,0)');
+      lineChart = new Chart(ctx, {
+        type:'line',
+        data:{ labels, datasets:[{ label: metric, data: values, borderColor:'#0d6efd', backgroundColor:grad, fill:true, tension:.25 }] },
+        options:{ plugins:{ legend:{ display:false } }, responsive:true, maintainAspectRatio:false,
+                  scales:{ y:{ beginAtZero:true }, x:{} } }
+      });
+    }catch(e){
+      console.warn('timeseries fail', e);
+      showErrorBanner();
+    }
+  }
+
+  // ===== barres Top projets
+  async function loadTop(){
+    try{
+      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value;
+      const banner = $('f-banner')?.value; // <-- AJOUT
+      const url = buildURL('/api/stats/top', {from, to, project, banner});
+      const data = await fetchJSON(url);
+
+      const labels = (data.items||[]).map(i=>i.label);
+      const values = (data.items||[]).map(i=>i.value);
+
+      const ctx = $('topProjectsChart')?.getContext('2d');
+      if(!ctx) return;
+      barChart && barChart.destroy();
+      barChart = new Chart(ctx, {
+        type:'bar',
+        data:{ labels, datasets:[{ label:'Projets', data: values }] },
+        options:{ plugins:{ legend:{ display:false } }, responsive:true, maintainAspectRatio:false,
+                  scales:{ y:{ beginAtZero:true }, x:{ grid:{ display:false } } } }
+      });
+
+      // Titre avec libellé complet si un projet est sélectionné
+      const sel = $('f-project');
+      const opt = sel?.selectedOptions?.[0];
+      const label = opt?.dataset?.label;
+      $('top-title').textContent = (sel?.value)
+        ? `Top projets — uniquement le projet choisi (${label || sel.value})`
+        : 'Top projets — tous projets confondus';
+    }catch(e){
+      console.warn('top fail', e);
+      showErrorBanner();
+    }
+  }
+
+  // ===== donut Qualité
+  async function loadQuality(){
+    try{
+      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value;
+      const banner = $('f-banner')?.value; // <-- AJOUT
+      const url = buildURL('/api/stats/quality', {from, to, project, banner});
+      const data = await fetchJSON(url);
+
+      $('avg-length').textContent = (data.content?.length_avg ?? 0).toLocaleString('fr-FR');
+      $('sum-views').textContent  = (data.content?.views_30d_sum ?? 0).toLocaleString('fr-FR');
+
+      const st = data.status || {todo:0, in_progress:0, done:0};
+      const ctx = $('qualityChart')?.getContext('2d');
+      if(!ctx) return;
+      doughnutChart && doughnutChart.destroy();
+      doughnutChart = new Chart(ctx, {
+        type:'doughnut',
+        data:{ labels:['À faire','En cours','Terminé'], datasets:[{ data:[st.todo||0, st.in_progress||0, st.done||0] }] },
+        options:{ plugins:{ legend:{ position:'bottom' } }, cutout:'62%' }
+      });
+    }catch(e){
+      console.warn('quality fail', e);
+      showErrorBanner();
+    }
+  }
+
+  // ===== bannière d’erreur
+  function showErrorBanner(){
+    const el = document.getElementById('error');
+    if(el){ el.classList.remove('d-none'); el.textContent = "⚠️ Impossible de charger certaines données. Vérifiez que app.py tourne bien."; }
+  }
+  function hideErrorBanner(){
+    const el = document.getElementById('error');
+    if(el){ el.classList.add('d-none'); el.textContent = ""; }
+  }
+
+  // ===== Thème
+  (function Theme(){
+    const KEY='gawa-theme', btn=$('theme-toggle'), root=document.documentElement;
+    function apply(t){ if(t==='dark'){root.setAttribute('data-theme','dark'); btn&&(btn.textContent='☀️ Mode soleil');}
+                       else {root.removeAttribute('data-theme'); btn&&(btn.textContent='🌙 Mode lune');} }
+    function current(){ return localStorage.getItem(KEY) || 'light'; }
+    apply(current());
+    btn && btn.addEventListener('click', ()=>{
+      const next = root.hasAttribute('data-theme') ? 'light' : 'dark';
+      localStorage.setItem(KEY, next); apply(next);
+      // Re-crée les graphes après switch (couleurs)
+      try{ lineChart?.destroy(); barChart?.destroy(); doughnutChart?.destroy(); }catch(e){}
+      setTimeout(loadAll, 30);
+    });
+  })();
+
+  // ===== Animations d’entrée (.reveal -> .in)
+  (function initReveal(){
+    const els = Array.from(document.querySelectorAll('.reveal'));
+    if (!('IntersectionObserver' in window) || !els.length) { els.forEach(el => el.classList.add('in')); return; }
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: .08 });
+    els.forEach(el => io.observe(el));
+  })();
+
+  // ===== boot
+  async function loadAll(){
+    hideErrorBanner();
+    await Promise.allSettled([loadOverview(), loadTimeseries(), loadTop(), loadQuality()]);
+  }
+  function initFilters(){
+    const today = new Date(); const from = new Date(today.getTime() - 29*24*3600*1000);
+    $('f-from').value = from.toISOString().slice(0,10);
+    $('f-to').value   = today.toISOString().slice(0,10);
+    $('metric').addEventListener('change', loadTimeseries);
+    $('f-apply').addEventListener('click', loadAll);
+    $('f-project').addEventListener('change', loadAll);
+    // AJOUT : Entrée dans "Type de bandeaux" déclenche le rechargement
+    $('f-banner')?.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') loadAll(); });
+    $('f-banner')?.addEventListener('change', loadAll);
+  }
+
+  console.log('[GAWA] stats JS chargé');
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    await loadProjects();
+    initFilters();
+    loadAll();
+  });
+  </script>
+{% endblock %}
