@@ -26,3 +26,10 @@ Thumbs.db
 node_modules/
 dist/
 build/
+
+# Local
+.venv/
+instance/
+*.db
+__pycache__/
+*.pyc

@@ -3,19 +3,17 @@
 {% block title %}Statistiques – GAWA V6{% endblock %}
 
 {% block head %}
-  <!-- Chart.js (le JS inclut aussi un fallback si ce CDN est bloqué) -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 {% endblock %}
 
 {% block content %}
   <h1 class="mb-1">GAWA V6 — Statistiques</h1>
   <p class="text-muted mb-4">Données de démonstration. Connexion à la base réelle prévue plus tard.</p>
+
   <div class="d-flex justify-content-end mb-2">
-  <button id="theme-toggle" class="btn btn-sm btn-outline-light"
-          style="backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border-color: rgba(255,255,255,.35)">
-    🌙 Mode lune
-  </button>
-</div>
+    <button id="theme-toggle" class="btn btn-sm btn-outline-light">🌙 Mode lune</button>
+  </div>
 
   <!-- Filtres -->
   <div class="gawa-card mb-3 reveal">
@@ -32,11 +30,7 @@
         <label class="form-label">Projet</label>
         <select id="f-project" class="form-select">
           <option value="">(Tous)</option>
-          <option value="CIV">CIV</option>
-          <option value="AFR">AFR</option>
-          <option value="POL">POL</option>
-          <option value="TECH">TECH</option>
-          <option value="FEM">FEM</option>
+          <!-- options injectées par JS depuis /api/catalog/projects -->
         </select>
       </div>
       <div class="col-md-3">
@@ -46,37 +40,17 @@
   </div>
 
   <!-- KPI -->
-  <div class="row g-3 mb-4 gawa-kpi reveal">
-    <div class="col-md-3">
-      <div class="gawa-card text-center">
-        <div class="kpi-label">Queries</div>
-        <div id="kpi-queries" class="kpi-value">--</div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="gawa-card text-center">
-        <div class="kpi-label">Suggestions</div>
-        <div id="kpi-suggestions" class="kpi-value">--</div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="gawa-card text-center">
-        <div class="kpi-label">Assignations</div>
-        <div id="kpi-assignments" class="kpi-value">--</div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="gawa-card text-center">
-        <div class="kpi-label">Contributeurs</div>
-        <div id="kpi-contributors" class="kpi-value">--</div>
-      </div>
-    </div>
+  <div class="row g-3 mb-4 gawa-kpi">
+    <div class="col-md-3"><div class="gawa-card text-center reveal kpi-card"><div class="kpi-label">Queries</div><div id="kpi-queries" class="kpi-value">--</div></div></div>
+    <div class="col-md-3"><div class="gawa-card text-center reveal kpi-card"><div class="kpi-label">Suggestions</div><div id="kpi-suggestions" class="kpi-value">--</div></div></div>
+    <div class="col-md-3"><div class="gawa-card text-center reveal kpi-card"><div class="kpi-label">Assignations</div><div id="kpi-assignments" class="kpi-value">--</div></div></div>
+    <div class="col-md-3"><div class="gawa-card text-center reveal kpi-card"><div class="kpi-label">Contributeurs</div><div id="kpi-contributors" class="kpi-value">--</div></div></div>
   </div>
 
-  <!-- Activité (timeseries) -->
+  <!-- Activité -->
   <div class="gawa-card mb-4 reveal">
     <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-2">
-      <div class="gawa-panel-title m-0">Activité</div>
+      <h4 class="m-0">Activité</h4>
       <div class="d-inline-flex align-items-center gap-2">
         <label for="metric" class="form-label m-0">Métrique</label>
         <select id="metric" class="form-select">
@@ -93,26 +67,17 @@
   </div>
 
   <div class="row g-3">
-    <!-- Top projets -->
     <div class="col-md-6">
       <div class="gawa-card reveal">
         <h4 id="top-title" class="mb-3">Top projets — tous projets confondus</h4>
-        <div class="chart-wrap">
-          <canvas id="topProjectsChart"></canvas>
-        </div>
+        <div class="chart-wrap"><canvas id="topProjectsChart"></canvas></div>
       </div>
     </div>
-
-    <!-- Qualité -->
     <div class="col-md-6">
       <div class="gawa-card reveal">
         <h4 class="mb-3">Qualité</h4>
         <div class="row g-3 align-items-center">
-          <div class="col-sm-6">
-            <div class="chart-wrap">
-              <canvas id="qualityChart"></canvas>
-            </div>
-          </div>
+          <div class="col-sm-6"><div class="chart-wrap"><canvas id="qualityChart"></canvas></div></div>
           <div class="col-sm-6 d-flex flex-column gap-2">
             <span class="gawa-chip"><b>Longueur moy.</b> : <span id="avg-length">—</span></span>
             <span class="gawa-chip"><b>Vues 30j</b> : <span id="sum-views">—</span></span>
@@ -122,327 +87,202 @@
     </div>
   </div>
 
-  <!-- Alerte globale -->
   <div id="error" class="alert alert-danger mt-3 d-none"></div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-/* ===== Thème Chart.js (glass) + couleurs ===== */
-(function chartTheme(){
-  const css = (n,f) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || f;
-  const COL_TEXT = css('--gawa-text', '#212529');
-  const C1='#0d6efd', C2='#23b38a', C3='#f59f00', C4='#d63384', C5='#20c997', C6='#495057';
-
-  function makeGradient(ctx, from='rgba(13,110,253,.30)'){
-    const g = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height*0.9);
-    g.addColorStop(0, from); g.addColorStop(1, 'rgba(13,110,253,0)');
-    return g;
+  <script>
+  // ===== helpers DOM & URL
+  const $ = (id) => document.getElementById(id);
+  function buildURL(path, params) {
+    const usp = new URLSearchParams();
+    Object.entries(params || {}).forEach(([k,v])=>{
+      if(v!==undefined && v!==null && String(v).trim()!=="") usp.set(k, v);
+    });
+    const qs = usp.toString();
+    return qs ? `${path}?${qs}` : path;
+  }
+  async function fetchJSON(url){
+    const r = await fetch(url);
+    if(!r.ok) throw new Error(`${r.status} on ${url}`);
+    return r.json();
   }
 
-  if (!window.Chart) { window.GAWA_COLORS = {C1,C2,C3,C4,C5,C6,makeGradient}; return; }
+  // ===== chart holders
+  let lineChart, barChart, doughnutChart;
 
-  // Helpers pour créer les chemins manquants dans Chart.defaults
-  function ensurePath(root, path){
-    let o = root;
-    for (const key of path) o = (o[key] ??= {});
-    return o;
-  }
-
-  // Defaults globaux
-  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily || 'system-ui, -apple-system, Segoe UI, Roboto';
-  Chart.defaults.font.size   = 12;
-  Chart.defaults.color       = COL_TEXT;
-  Chart.defaults.responsive  = true;
-  Chart.defaults.maintainAspectRatio = false; // la hauteur est pilotée par .chart-wrap
-  Chart.defaults.borderColor = 'rgba(0,0,0,.08)';
-  Chart.defaults.elements.point.radius = 0;
-  Chart.defaults.elements.point.hoverRadius = 3;
-  Chart.defaults.elements.line.borderWidth = 2;
-  Chart.defaults.animation.duration = 300;
-
-  // Grilles — initialisation safe
-  ensurePath(Chart.defaults, ['scales','linear','grid']).color   = 'rgba(0,0,0,.06)';
-  ensurePath(Chart.defaults, ['scales','category','grid']).color = 'rgba(0,0,0,.06)';
-
-  // Plugins — initialisation safe
-  ensurePath(Chart.defaults, ['plugins','legend','labels']).boxWidth = 10;
-  const tt = ensurePath(Chart.defaults, ['plugins','tooltip']);
-  tt.backgroundColor = 'rgba(255,255,255,.92)';
-  tt.titleColor = COL_TEXT;
-  tt.bodyColor  = COL_TEXT;
-  tt.borderColor = 'rgba(0,0,0,.12)';
-  tt.borderWidth = 1;
-  tt.titleFont = { weight: '600' };
-
-  // Palettes par défaut
-  Chart.defaults.datasets ??= {};
-  Chart.defaults.datasets.bar ??= {};
-  Chart.defaults.datasets.doughnut ??= {};
-  Chart.defaults.datasets.bar.backgroundColor = [C1,C2,C3,C4,C5,C6];
-  Chart.defaults.datasets.doughnut.backgroundColor = [C1,C4,C2];
-
-  // Expose
-  window.GAWA_COLORS = { C1,C2,C3,C4,C5,C6, makeGradient };
-})();
-
-/* ===== Fallback CDN Chart.js ===== */
-(function ensureChartJs(){
-  function tryAlt(){
-    if (window.Chart) return;
-    var s = document.createElement('script');
-    s.src = "https://unpkg.com/chart.js@4.4.1/dist/chart.umd.js";
-    s.onload = function(){ console.log("Chart.js fallback loaded"); };
-    document.head.appendChild(s);
-  }
-  if (!window.Chart) setTimeout(tryAlt, 800);
-})();
-
-/* ===== Utilitaires ===== */
-const $ = (id) => document.getElementById(id);
-const toISO = d => d?.toISOString?.().slice(0,10);
-function qsParams(){
-  const p = new URLSearchParams();
-  if($('f-from')?.value)    p.set('from', $('f-from').value);
-  if($('f-to')?.value)      p.set('to', $('f-to').value);
-  if($('f-project')?.value) p.set('project', $('f-project').value);
-  return p.toString();
-}
-async function fetchJSON(url){
-  const r = await fetch(url);
-  if(!r.ok) throw new Error('HTTP '+r.status+' on '+url);
-  return r.json();
-}
-
-/* ===== Placeholders sûrs ===== */
-function placeholderLine(){
-  const today = new Date();
-  const labels = Array.from({length:7},(_,i)=> {
-    const d=new Date(today.getTime()-(6-i)*86400000); return d.toISOString().slice(0,10);
-  });
-  const values = [3,5,4,6,8,7,9];
-  return {labels,values};
-}
-function placeholderBars(){
-  return { labels:['CIV','AFR','TECH','FEM','POL'], values:[12,9,7,6,5] };
-}
-function placeholderDonut(){
-  return { todo:5, in_progress:3, done:8, avgLen: 1800, views: 4200 };
-}
-
-/* ===== Charts ===== */
-let lineChart, barChart, doughnutChart;
-
-/* Attend Chart.js puis exécute cb */
-function withChart(cb, tries=12){
-  if (window.Chart) return cb();
-  if (tries<=0) return console.warn('Chart.js non dispo');
-  setTimeout(()=>withChart(cb, tries-1), 200);
-}
-
-async function loadOverview(){
-  try{
-    const q = qsParams();
-    const data = await fetchJSON('/api/stats/overview' + (q?('?'+q):''));
-    $('kpi-queries').textContent      = (data.counts?.queries ?? 0).toLocaleString('fr-FR');
-    $('kpi-suggestions').textContent  = (data.counts?.suggestions ?? 0).toLocaleString('fr-FR');
-    $('kpi-assignments').textContent  = (data.counts?.assignments ?? 0).toLocaleString('fr-FR');
-    $('kpi-contributors').textContent = (data.counts?.contributors ?? 0).toLocaleString('fr-FR');
-  }catch(e){
-    console.warn('overview fallback', e);
-    $('kpi-queries').textContent      = '—';
-    $('kpi-suggestions').textContent  = '—';
-    $('kpi-assignments').textContent  = '—';
-    $('kpi-contributors').textContent = '—';
-  }
-}
-
-async function loadTimeseries(){
-  withChart(async ()=>{
+  // ===== charge les projets dans le <select>
+  async function loadProjects(){
     try{
-      const metric = $('metric').value;
-      const q = qsParams();
-      const data = await fetchJSON(`/api/stats/timeseries?metric=${metric}` + (q?('&'+q):''));      
-      const labels = (data.points || []).map(p => p.t);
-      const values = (data.points || []).map(p => p.v);
+      const data = await fetchJSON('/api/catalog/projects');
+      const sel = $('f-project');
+      if (!sel) return;
+      // reset
+      sel.innerHTML = '<option value="">(Tous)</option>';
+      for (const p of (data.projects||[])) {
+        const opt = document.createElement('option');
+        opt.value = p.slug; opt.textContent = `${p.slug} — ${p.label}`;
+        sel.appendChild(opt);
+      }
+    }catch(e){ console.warn('projects fail', e); }
+  }
 
-      const ctx = $('timeseriesChart').getContext('2d');
-      const grad = (window.GAWA_COLORS?.makeGradient?.(ctx,'rgba(13,110,253,.30)')) || 'rgba(13,110,253,.20)';
-      if(lineChart) lineChart.destroy();
-      lineChart = new Chart(ctx, {
-        type:'line',
-        data:{ labels, datasets:[{ label: metric, data: values, borderColor: (GAWA_COLORS?.C1||'#0d6efd'), backgroundColor: grad, fill:true, tension:.25 }] },
-        options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, grid:{ drawBorder:false } }, x:{ grid:{ drawBorder:false } } } }
-      });
-
-      if (!labels.length) throw new Error('empty-timeseries'); // force placeholder si vide
+  // ===== KPI
+  async function loadOverview(){
+    try{
+      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value;
+      const url = buildURL('/api/stats/overview', {from, to, project});
+      const data = await fetchJSON(url);
+      $('kpi-queries').textContent      = (data.counts?.queries ?? 0).toLocaleString('fr-FR');
+      $('kpi-suggestions').textContent  = (data.counts?.suggestions ?? 0).toLocaleString('fr-FR');
+      $('kpi-assignments').textContent  = (data.counts?.assignments ?? 0).toLocaleString('fr-FR');
+      $('kpi-contributors').textContent = (data.counts?.contributors ?? 0).toLocaleString('fr-FR');
     }catch(e){
-      console.warn('timeseries fallback', e);
-      const ph = placeholderLine();
-      const ctx = $('timeseriesChart').getContext('2d');
-      const grad = (window.GAWA_COLORS?.makeGradient?.(ctx,'rgba(13,110,253,.30)')) || 'rgba(13,110,253,.20)';
-      if(lineChart) lineChart.destroy();
+      console.warn('overview fail', e);
+      $('kpi-queries').textContent = $('kpi-suggestions').textContent =
+      $('kpi-assignments').textContent = $('kpi-contributors').textContent = '—';
+      showErrorBanner();
+    }
+  }
+
+  // ===== courbe Activité
+  async function loadTimeseries(){
+    try{
+      const metric = $('metric')?.value || 'queries';
+      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value;
+      const url = buildURL('/api/stats/timeseries', {metric, from, to, project});
+      const data = await fetchJSON(url);
+
+      const labels = (data.points||[]).map(p=>p.t);
+      const values = (data.points||[]).map(p=>p.v);
+
+      const ctx = $('timeseriesChart')?.getContext('2d');
+      if(!ctx) return;
+      lineChart && lineChart.destroy();
+      const grad = ctx.createLinearGradient(0,0,0,ctx.canvas.height*0.9);
+      grad.addColorStop(0, 'rgba(13,110,253,.30)');
+      grad.addColorStop(1, 'rgba(13,110,253,0)');
       lineChart = new Chart(ctx, {
         type:'line',
-        data:{ labels: ph.labels, datasets:[{ label:'Activité', data: ph.values, borderColor:(GAWA_COLORS?.C1||'#0d6efd'), backgroundColor: grad, fill:true, tension:.25 }] },
-        options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true }, x:{ } } }
+        data:{ labels, datasets:[{ label: metric, data: values, borderColor:'#0d6efd', backgroundColor:grad, fill:true, tension:.25 }] },
+        options:{ plugins:{ legend:{ display:false } }, responsive:true, maintainAspectRatio:false,
+                  scales:{ y:{ beginAtZero:true }, x:{} } }
       });
+    }catch(e){
+      console.warn('timeseries fail', e);
+      showErrorBanner();
     }
-  });
-}
+  }
 
-async function loadTopProjects(){
-  withChart(async ()=>{
+  // ===== barres Top projets
+  async function loadTop(){
     try{
+      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value;
+      const url = buildURL('/api/stats/top', {from, to, project});
+      const data = await fetchJSON(url);
+
+      const labels = (data.items||[]).map(i=>i.label);
+      const values = (data.items||[]).map(i=>i.value);
+
+      const ctx = $('topProjectsChart')?.getContext('2d');
+      if(!ctx) return;
+      barChart && barChart.destroy();
+      barChart = new Chart(ctx, {
+        type:'bar',
+        data:{ labels, datasets:[{ label:'Projets', data: values }] },
+        options:{ plugins:{ legend:{ display:false } }, responsive:true, maintainAspectRatio:false,
+                  scales:{ y:{ beginAtZero:true }, x:{ grid:{ display:false } } } }
+      });
+
       const proj = $('f-project')?.value || '';
-      $('top-title').textContent = proj ? `Top projets — uniquement le projet choisi (${proj})` : 'Top projets — tous projets confondus';
-      const q = qsParams();
-      const data = await fetchJSON('/api/stats/top' + (q?('?'+q):''));
-      const labels = (data.items || []).map(i => i.label);
-      const values = (data.items || []).map(i => i.value);
-
-      if(barChart) barChart.destroy();
-      barChart = new Chart($('topProjectsChart'), {
-        type:'bar',
-        data:{ labels, datasets:[{ label:'Projets', data: values, backgroundColor: (GAWA_COLORS?.C2||'#23b38a'), borderColor:'rgba(0,0,0,.06)', borderWidth:1 }] },
-        options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, grid:{ drawBorder:false } }, x:{ grid:{ display:false } } } }
-      });
-
-      if (!labels.length) throw new Error('empty-top');
+      $('top-title').textContent = proj ? `Top projets — uniquement le projet choisi (${proj})`
+                                        : 'Top projets — tous projets confondus';
     }catch(e){
-      console.warn('top fallback', e);
-      const ph = placeholderBars();
-      if(barChart) barChart.destroy();
-      barChart = new Chart($('topProjectsChart'), {
-        type:'bar',
-        data:{ labels: ph.labels, datasets:[{ label:'Projets', data: ph.values, backgroundColor: (GAWA_COLORS?.C2||'#23b38a') }] },
-        options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true }, x:{ grid:{ display:false } } } }
-      });
+      console.warn('top fail', e);
+      showErrorBanner();
     }
-  });
-}
+  }
 
-async function loadQuality(){
-  withChart(async ()=>{
+  // ===== donut Qualité
+  async function loadQuality(){
     try{
-      const q = qsParams();
-      const data = await fetchJSON('/api/stats/quality' + (q?('?'+q):''));
-      const st = data.status || { todo:0, in_progress:0, done:0 };
-
-      if(doughnutChart) doughnutChart.destroy();
-      doughnutChart = new Chart($('qualityChart'), {
-        type:'doughnut',
-        data:{
-          labels:['À faire','En cours','Terminé'],
-          datasets:[{
-            data:[st.todo||0, st.in_progress||0, st.done||0],
-            backgroundColor:[(GAWA_COLORS?.C1||'#0d6efd'), (GAWA_COLORS?.C4||'#d63384'), (GAWA_COLORS?.C2||'#23b38a')],
-            borderColor:'rgba(255,255,255,.7)',
-            borderWidth:2
-          }]
-        },
-        options:{ plugins:{ legend:{ position:'bottom' } }, cutout:'62%' }
-      });
+      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value;
+      const url = buildURL('/api/stats/quality', {from, to, project});
+      const data = await fetchJSON(url);
 
       $('avg-length').textContent = (data.content?.length_avg ?? 0).toLocaleString('fr-FR');
       $('sum-views').textContent  = (data.content?.views_30d_sum ?? 0).toLocaleString('fr-FR');
 
-      if ((st.todo|0)+(st.in_progress|0)+(st.done|0) === 0) throw new Error('empty-quality');
-    }catch(e){
-      console.warn('quality fallback', e);
-      const ph = placeholderDonut();
-      if(doughnutChart) doughnutChart.destroy();
-      doughnutChart = new Chart($('qualityChart'), {
+      const st = data.status || {todo:0, in_progress:0, done:0};
+      const ctx = $('qualityChart')?.getContext('2d');
+      if(!ctx) return;
+      doughnutChart && doughnutChart.destroy();
+      doughnutChart = new Chart(ctx, {
         type:'doughnut',
-        data:{ labels:['À faire','En cours','Terminé'], datasets:[{ data:[ph.todo, ph.in_progress, ph.done], backgroundColor:[(GAWA_COLORS?.C1||'#0d6efd'), (GAWA_COLORS?.C4||'#d63384'), (GAWA_COLORS?.C2||'#23b38a')] }] },
+        data:{ labels:['À faire','En cours','Terminé'], datasets:[{ data:[st.todo||0, st.in_progress||0, st.done||0] }] },
         options:{ plugins:{ legend:{ position:'bottom' } }, cutout:'62%' }
       });
-      $('avg-length').textContent = ph.avgLen.toLocaleString('fr-FR');
-      $('sum-views').textContent  = ph.views.toLocaleString('fr-FR');
+    }catch(e){
+      console.warn('quality fail', e);
+      showErrorBanner();
     }
+  }
+
+  // ===== bannière d’erreur
+  function showErrorBanner(){
+    const el = document.getElementById('error');
+    if(el){ el.classList.remove('d-none'); el.textContent = "⚠️ Impossible de charger certaines données. Vérifiez que app.py tourne bien."; }
+  }
+  function hideErrorBanner(){
+    const el = document.getElementById('error');
+    if(el){ el.classList.add('d-none'); el.textContent = ""; }
+  }
+
+  // ===== Thème
+  (function Theme(){
+    const KEY='gawa-theme', btn=$('theme-toggle'), root=document.documentElement;
+    function apply(t){ if(t==='dark'){root.setAttribute('data-theme','dark'); btn&&(btn.textContent='☀️ Mode soleil');}
+                       else {root.removeAttribute('data-theme'); btn&&(btn.textContent='🌙 Mode lune');} }
+    function current(){ return localStorage.getItem(KEY) || 'light'; }
+    apply(current());
+    btn && btn.addEventListener('click', ()=>{
+      const next = root.hasAttribute('data-theme') ? 'light' : 'dark';
+      localStorage.setItem(KEY, next); apply(next);
+      // Re-crée les graphes après switch (couleurs)
+      try{ lineChart?.destroy(); barChart?.destroy(); doughnutChart?.destroy(); }catch(e){}
+      setTimeout(loadAll, 30);
+    });
+  })();
+
+  // ===== Animations d’entrée (.reveal -> .in)
+  (function initReveal(){
+    const els = Array.from(document.querySelectorAll('.reveal'));
+    if (!('IntersectionObserver' in window) || !els.length) { els.forEach(el => el.classList.add('in')); return; }
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: .08 });
+    els.forEach(el => io.observe(el));
+  })();
+
+  // ===== boot
+  async function loadAll(){
+    hideErrorBanner();
+    await Promise.allSettled([loadOverview(), loadTimeseries(), loadTop(), loadQuality()]);
+  }
+  function initFilters(){
+    const today = new Date(); const from = new Date(today.getTime() - 29*24*3600*1000);
+    $('f-from').value = from.toISOString().slice(0,10);
+    $('f-to').value   = today.toISOString().slice(0,10);
+    $('metric').addEventListener('change', loadTimeseries);
+    $('f-apply').addEventListener('click', loadAll);
+    $('f-project').addEventListener('change', loadAll);
+  }
+
+  console.log('[GAWA] stats JS chargé');
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    await loadProjects();
+    initFilters();
+    loadAll();
   });
-}
-
-/* ===== Animations d’entrée ===== */
-(function initReveal(){
-  const els = Array.from(document.querySelectorAll('.reveal'));
-  if (!('IntersectionObserver' in window) || !els.length) { els.forEach(el => el.classList.add('in')); return; }
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
-  }, { threshold: .08 });
-  els.forEach(el => io.observe(el));
-})();
-
-/* ===== Init ===== */
-function init(){
-  const today = new Date(); const from = new Date(today.getTime() - 29*24*3600*1000);
-  if($('f-from')) $('f-from').value = toISO(from);
-  if($('f-to'))   $('f-to').value   = toISO(today);
-  $('f-apply')?.addEventListener('click', loadAll);
-  $('metric')?.addEventListener('change', loadTimeseries);
-  $('f-project')?.addEventListener('change', loadTopProjects);
-  loadAll();
-}
-async function loadAll(){ await Promise.allSettled([loadOverview(), loadTimeseries(), loadTopProjects(), loadQuality()]); }
-
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-/* ===== Theme manager (light/dark) — non intrusif ===== */
-(function Theme(){
-  const KEY = 'gawa-theme';             // 'light' | 'dark' | 'system' (optionnel)
-  const root = document.documentElement; // <html>
-  const btn  = document.getElementById('theme-toggle');
-
-  function systemPrefersDark(){
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-
-  function current(){
-    return localStorage.getItem(KEY) || 'light';
-  }
-
-  function apply(theme){
-    // 'dark' force le data-theme, 'light' le supprime
-    if (theme === 'dark' || (theme === 'system' && systemPrefersDark())){
-      root.setAttribute('data-theme','dark');
-      btn && (btn.textContent = '☀️ Mode soleil');
-    } else {
-      root.removeAttribute('data-theme');
-      btn && (btn.textContent = '🌙 Mode lune');
-    }
-    // Re-thème Chart.js : on détruit et on redessine
-    try {
-      if (window.lineChart)     { lineChart.destroy();     lineChart = null; }
-      if (window.barChart)      { barChart.destroy();      barChart = null; }
-      if (window.doughnutChart) { doughnutChart.destroy(); doughnutChart = null; }
-    } catch(e){ console.warn('chart destroy', e); }
-    // Astuce: on relance la création (utilise tes fonctions existantes)
-    if (typeof loadAll === 'function') {
-      // Petite latence pour laisser le reflow CSS s’appliquer
-      setTimeout(loadAll, 50);
-    }
-  }
-
-  function setTheme(theme){
-    localStorage.setItem(KEY, theme);
-    apply(theme);
-  }
-
-  // Init
-  const saved = current();
-  apply(saved);
-
-  // Écoute toggle
-  btn && btn.addEventListener('click', () => {
-    const next = root.hasAttribute('data-theme') ? 'light' : 'dark';
-    setTheme(next);
-  });
-
-  // Si tu décides plus tard de supporter 'system', décommente:
-  // window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-  //   if (current() === 'system') apply('system');
-  // });
-})();
-/* ===== Info si Chart.js non chargé après 3s ===== */
-setTimeout(()=>{ if(!window.Chart){ const el=$('error'); if(el){ el.classList.remove('d-none'); el.textContent="⚠️ Chart.js n’a pas pu être chargé (réseau/extension ?). Les graphiques sont en mode secours."; } }}, 3000);
-</script>
+  </script>
 {% endblock %}
