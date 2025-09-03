@@ -5,6 +5,55 @@
 
 /* ---- Palette & tokens ---- */
 :root{
+  /* Couleurs claires par défaut */
+  --gawa-text: #1f2937;             /* gris-900 */
+  --gawa-muted: rgba(0,0,0,.6);
+  --gawa-card: rgba(255,255,255,.68);
+  --gawa-card-border: rgba(0,0,0,.08);
+  --gawa-chip-bg: rgba(255,255,255,.8);
+  --gawa-chip-text: #111827;
+
+  /* Transitions douces */
+  --gawa-ease: 200ms ease;
+}
+
+html, body{
+  color: var(--gawa-text);
+  transition: color var(--gawa-ease), background-color var(--gawa-ease);
+}
+
+/* Cartes / puces utilisent les variables */
+.gawa-card{
+  background: var(--gawa-card);
+  border: 1px solid var(--gawa-card-border);
+}
+.gawa-chip{
+  background: var(--gawa-chip-bg);
+  color: var(--gawa-chip-text);
+}
+
+/* ----- Mode sombre ----- */
+[data-theme="dark"]{
+  --gawa-text: #e5e7eb;             /* gris-200 */
+  --gawa-muted: rgba(229,231,235,.7);
+  --gawa-card: rgba(17,24,39,.66);   /* ardoise-900 */
+  --gawa-card-border: rgba(255,255,255,.08);
+  --gawa-chip-bg: rgba(17,24,39,.85);
+  --gawa-chip-text: #e5e7eb;
+}
+
+/* Fond : variante sombre (si tu utilises un dégradé de fond global) */
+[data-theme="dark"] body{
+  background: radial-gradient(1200px 600px at 10% -10%, #0f172a 0%, #0b1b3a 45%, #3b0764 100%) fixed;
+}
+
+/* Bouton toggle lisible dans les deux thèmes */
+#theme-toggle{
+  border-color: var(--gawa-card-border) !important;
+  color: var(--gawa-text) !important;
+}
+
+:root{
   --gawa-surface: rgba(255,255,255,.72); /* surface translucide */
   --gawa-surface-strong: rgba(255,255,255,.86);
   --gawa-border: rgba(255,255,255,.35);
@@ -241,4 +290,56 @@ h1, h2, h3, h4 { letter-spacing: .2px; }
 :root[data-theme="dark"] .wave{
   opacity: 0.5;
   filter: brightness(.85);
+}
+
+/* --- Corriger l’avertissement will-change --- */
+
+/* On annule will-change si on l’a mis trop largement */
+.reveal,
+.gawa-card,
+.metric-card,
+.chart-wrap canvas,
+.wave {
+  will-change: auto !important;
+}
+
+/* Containment pour limiter la surface de repaint des charts */
+.chart-wrap {
+  contain: paint;
+}
+
+/* Si l’utilisateur préfère moins d’animations, on coupe les vagues */
+@media (prefers-reduced-motion: reduce) {
+  .wave { animation: none !important; }
+}
+
+/* ===== Animations d'entrée (reveal) ===== */
+.reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .45s ease, transform .45s ease;
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Effet hover léger sur les cartes KPI */
+.kpi-card {
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0,0,0,.08);
+}
+
+/* Respecte 'prefers-reduced-motion' */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transition: none;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .kpi-card { transition: none; }
+  .kpi-card:hover { transform: none; box-shadow: none; }
 }
