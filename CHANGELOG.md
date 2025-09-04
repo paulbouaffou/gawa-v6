@@ -1,3 +1,10 @@
+
+## [1.2.0] — 2025-09-04
+### Added
+- Export PDF, PNG, JPEG depuis la page Statistiques
+### Fixed
+- Mise en page filtres (bandeau)
+
 # Changelog
 
 ## [1.1.0] - 2025-09-03
