@@ -5,113 +5,104 @@
 {% block head %}
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Export images / PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 {% endblock %}
 
 {% block content %}
   <h1 class="mb-1">GAWA V6 — Statistiques</h1>
   <p class="text-muted mb-4">Données de démonstration. Connexion à la base réelle prévue plus tard.</p>
 
-  <div class="d-flex justify-content-end mb-2">
-    <button id="theme-toggle" class="btn btn-sm btn-outline-light">🌙 Mode lune</button>
+  <div class="d-flex justify-content-end align-items-center gap-2 mb-2">
+  <div class="btn-group btn-group-sm" role="group" aria-label="Export">
+    <button id="export-pdf"  class="btn btn-outline-light">📄 PDF</button>
+    <button id="export-png"  class="btn btn-outline-light">🖼️ PNG</button>
+    <button id="export-jpg"  class="btn btn-outline-light">JPEG</button>
   </div>
+  <button id="theme-toggle" class="btn btn-sm btn-outline-light">🌙 Mode lune</button>
+</div>
 
-  <!-- Filtres -->
-  <div class="gawa-card mb-3 reveal">
-    <div class="row g-2 align-items-end">
-      <div class="col-md-3">
-        <label class="form-label">Du</label>
-        <input id="f-from" type="date" class="form-control">
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Au</label>
-        <input id="f-to" type="date" class="form-control">
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Projet</label>
-        <select id="f-project" class="form-select">
-          <option value="">(Tous)</option>
-          <!-- options injectées par JS depuis /api/catalog/projects -->
-        </select>
-      </div>
-      <!-- AJOUT : Recherche libre "Type de bandeaux" -->
-      <div class="col-md-3">
-        <label class="form-label">Type de bandeaux</label>
-        <input id="f-banner" type="text" class="form-control" placeholder="ex. ébauche, wikifier, à sourcer…">
-      </div>
+  <!-- ========= ZONE EXPORTABLE (tout ce bloc sera rendu en image) ========= -->
+  <div id="export-area">
 
-      <div class="col-md-3">
-        <button id="f-apply" class="btn btn-primary w-100">Appliquer</button>
+    <!-- Filtres -->
+    <div class="gawa-card mb-3 reveal">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label">Du</label>
+          <input id="f-from" type="date" class="form-control">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Au</label>
+          <input id="f-to" type="date" class="form-control">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Projet</label>
+          <select id="f-project" class="form-select">
+            <option value="">(Tous)</option>
+            <!-- options injectées par JS -->
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Type de bandeau</label>
+          <input id="f-banner" type="search" class="form-control" placeholder="Rechercher un bandeau…">
+        </div>
+        <div class="col-md-1">
+          <button id="f-apply" class="btn btn-primary w-100">Appliquer</button>
+        </div>
       </div>
     </div>
-  </div>
+    <!-- KPI -->
+    <div class="row g-3 mb-4 gawa-kpi">
+      <div class="col-md-3"><div class="gawa-card text-center reveal kpi-card"><div class="kpi-label">Queries</div><div id="kpi-queries" class="kpi-value">--</div></div></div>
+      <div class="col-md-3"><div class="gawa-card text-center reveal kpi-card"><div class="kpi-label">Suggestions</div><div id="kpi-suggestions" class="kpi-value">--</div></div></div>
+      <div class="col-md-3"><div class="gawa-card text-center reveal kpi-card"><div class="kpi-label">Assignations</div><div id="kpi-assignments" class="kpi-value">--</div></div></div>
+      <div class="col-md-3"><div class="gawa-card text-center reveal kpi-card"><div class="kpi-label">Contributeurs</div><div id="kpi-contributors" class="kpi-value">--</div></div></div>
+    </div>
 
-  <!-- KPI -->
-  <div class="row g-3 mb-4 gawa-kpi">
-    <div class="col-md-3">
-      <div class="gawa-card text-center reveal kpi-card">
-        <div class="kpi-label">Queries</div>
-        <div id="kpi-queries" class="kpi-value">--</div>
+    <!-- Activité -->
+    <div class="gawa-card mb-4 reveal">
+      <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-2">
+        <h4 class="m-0">Activité</h4>
+        <div class="d-inline-flex align-items-center gap-2">
+          <label for="metric" class="form-label m-0">Métrique</label>
+          <select id="metric" class="form-select">
+            <option value="queries">Queries</option>
+            <option value="suggestions">Suggestions</option>
+            <option value="assignments">Assignations</option>
+            <option value="contributors">Contributeurs</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="timeseriesChart"></canvas>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="gawa-card text-center reveal kpi-card">
-        <div class="kpi-label">Suggestions</div>
-        <div id="kpi-suggestions" class="kpi-value">--</div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="gawa-card text-center reveal kpi-card">
-        <div class="kpi-label">Assignations</div>
-        <div id="kpi-assignments" class="kpi-value">--</div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="gawa-card text-center reveal kpi-card">
-        <div class="kpi-label">Contributeurs</div>
-        <div id="kpi-contributors" class="kpi-value">--</div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Activité -->
-  <div class="gawa-card mb-4 reveal">
-    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-2">
-      <h4 class="m-0">Activité</h4>
-      <div class="d-inline-flex align-items-center gap-2">
-        <label for="metric" class="form-label m-0">Métrique</label>
-        <select id="metric" class="form-select">
-          <option value="queries">Queries</option>
-          <option value="suggestions">Suggestions</option>
-          <option value="assignments">Assignations</option>
-          <option value="contributors">Contributeurs</option>
-        </select>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="gawa-card reveal">
+          <h4 id="top-title" class="mb-3">Top projets — tous projets confondus</h4>
+          <div class="chart-wrap"><canvas id="topProjectsChart"></canvas></div>
+        </div>
       </div>
-    </div>
-    <div class="chart-wrap">
-      <canvas id="timeseriesChart"></canvas>
-    </div>
-  </div>
-
-  <div class="row g-3">
-    <div class="col-md-6">
-      <div class="gawa-card reveal">
-        <h4 id="top-title" class="mb-3">Top projets — tous projets confondus</h4>
-        <div class="chart-wrap"><canvas id="topProjectsChart"></canvas></div>
-      </div>
-    </div>
-    <div class="col-md-6">
-      <div class="gawa-card reveal">
-        <h4 class="mb-3">Qualité</h4>
-        <div class="row g-3 align-items-center">
-          <div class="col-sm-6"><div class="chart-wrap"><canvas id="qualityChart"></canvas></div></div>
-          <div class="col-sm-6 d-flex flex-column gap-2">
-            <span class="gawa-chip"><b>Longueur moy.</b> : <span id="avg-length">—</span></span>
-            <span class="gawa-chip"><b>Vues 30j</b> : <span id="sum-views">—</span></span>
+      <div class="col-md-6">
+        <div class="gawa-card reveal">
+          <h4 class="mb-3">Qualité</h4>
+          <div class="row g-3 align-items-center">
+            <div class="col-sm-6"><div class="chart-wrap"><canvas id="qualityChart"></canvas></div></div>
+            <div class="col-sm-6 d-flex flex-column gap-2">
+              <span class="gawa-chip"><b>Longueur moy.</b> : <span id="avg-length">—</span></span>
+              <span class="gawa-chip"><b>Vues 30j</b> : <span id="sum-views">—</span></span>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
   </div>
+  <!-- ========= /ZONE EXPORTABLE ========= -->
 
   <div id="error" class="alert alert-danger mt-3 d-none"></div>
 {% endblock %}
@@ -143,13 +134,10 @@
       const data = await fetchJSON('/api/catalog/projects');
       const sel = $('f-project');
       if (!sel) return;
-      // reset
       sel.innerHTML = '<option value="">(Tous)</option>';
       for (const p of (data.projects||[])) {
         const opt = document.createElement('option');
-        opt.value = p.slug;
-        opt.textContent = `${p.slug} — ${p.label}`; // aide visuelle : slug + libellé
-        opt.dataset.label = p.label;                // pour l’UI (titre "Top projets")
+        opt.value = p.slug; opt.textContent = `${p.slug} — ${p.label}`;
         sel.appendChild(opt);
       }
     }catch(e){ console.warn('projects fail', e); }
@@ -158,8 +146,7 @@
   // ===== KPI
   async function loadOverview(){
     try{
-      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value;
-      const banner = $('f-banner')?.value; // <-- AJOUT
+      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value, banner = $('f-banner')?.value;
       const url = buildURL('/api/stats/overview', {from, to, project, banner});
       const data = await fetchJSON(url);
       $('kpi-queries').textContent      = (data.counts?.queries ?? 0).toLocaleString('fr-FR');
@@ -178,8 +165,7 @@
   async function loadTimeseries(){
     try{
       const metric = $('metric')?.value || 'queries';
-      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value;
-      const banner = $('f-banner')?.value; // <-- AJOUT
+      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value, banner = $('f-banner')?.value;
       const url = buildURL('/api/stats/timeseries', {metric, from, to, project, banner});
       const data = await fetchJSON(url);
 
@@ -207,8 +193,7 @@
   // ===== barres Top projets
   async function loadTop(){
     try{
-      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value;
-      const banner = $('f-banner')?.value; // <-- AJOUT
+      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value, banner = $('f-banner')?.value;
       const url = buildURL('/api/stats/top', {from, to, project, banner});
       const data = await fetchJSON(url);
 
@@ -225,13 +210,9 @@
                   scales:{ y:{ beginAtZero:true }, x:{ grid:{ display:false } } } }
       });
 
-      // Titre avec libellé complet si un projet est sélectionné
-      const sel = $('f-project');
-      const opt = sel?.selectedOptions?.[0];
-      const label = opt?.dataset?.label;
-      $('top-title').textContent = (sel?.value)
-        ? `Top projets — uniquement le projet choisi (${label || sel.value})`
-        : 'Top projets — tous projets confondus';
+      const proj = $('f-project')?.value || '';
+      $('top-title').textContent = proj ? `Top projets — uniquement le projet choisi (${proj})`
+                                        : 'Top projets — tous projets confondus';
     }catch(e){
       console.warn('top fail', e);
       showErrorBanner();
@@ -241,8 +222,7 @@
   // ===== donut Qualité
   async function loadQuality(){
     try{
-      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value;
-      const banner = $('f-banner')?.value; // <-- AJOUT
+      const from = $('f-from')?.value, to = $('f-to')?.value, project = $('f-project')?.value, banner = $('f-banner')?.value;
       const url = buildURL('/api/stats/quality', {from, to, project, banner});
       const data = await fetchJSON(url);
 
@@ -284,7 +264,6 @@
     btn && btn.addEventListener('click', ()=>{
       const next = root.hasAttribute('data-theme') ? 'light' : 'dark';
       localStorage.setItem(KEY, next); apply(next);
-      // Re-crée les graphes après switch (couleurs)
       try{ lineChart?.destroy(); barChart?.destroy(); doughnutChart?.destroy(); }catch(e){}
       setTimeout(loadAll, 30);
     });
@@ -300,6 +279,51 @@
     els.forEach(el => io.observe(el));
   })();
 
+  // ===== Export image (PNG/JPEG) via html2canvas
+  async function exportDashboard(format='png'){
+    try{
+      const node = document.getElementById('export-area') || document.querySelector('.container');
+      if (!node) return;
+
+      // S’assure que tout est affiché avant capture
+      node.scrollIntoView({block: 'start'});
+      document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
+      await new Promise(r => requestAnimationFrame(r));
+
+      const dark = document.documentElement.hasAttribute('data-theme');
+      const mime = (format==='jpeg' || format==='jpg') ? 'image/jpeg' : 'image/png';
+      const canvas = await html2canvas(node, {
+        backgroundColor: dark ? '#0b1221' : '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        windowWidth: node.scrollWidth,
+        windowHeight: node.scrollHeight
+      });
+
+      const blob = await new Promise(res => canvas.toBlob(res, mime, mime==='image/jpeg' ? 0.92 : 1));
+      if (!blob) return;
+
+      const from = $('f-from')?.value || '';
+      const to   = $('f-to')?.value || '';
+      const proj = $('f-project')?.value || 'all';
+      const ban  = $('f-banner')?.value ? $('f-banner').value.trim().replace(/\s+/g,'-').slice(0,18) : '';
+      const ts   = new Date().toISOString().slice(0,10);
+      const ext  = (format==='jpeg' || format==='jpg') ? 'jpg' : 'png';
+      const name = `gawa-stats_${from}_${to}_${proj}${ban?`_ban-${ban}`:''}_${ts}.${ext}`;
+
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1200);
+    }catch(e){
+      console.warn('export image fail', e);
+      showErrorBanner();
+    }
+  }
+
   // ===== boot
   async function loadAll(){
     hideErrorBanner();
@@ -312,16 +336,68 @@
     $('metric').addEventListener('change', loadTimeseries);
     $('f-apply').addEventListener('click', loadAll);
     $('f-project').addEventListener('change', loadAll);
-    // AJOUT : Entrée dans "Type de bandeaux" déclenche le rechargement
-    $('f-banner')?.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') loadAll(); });
-    $('f-banner')?.addEventListener('change', loadAll);
+    $('f-banner').addEventListener('input', ()=>{
+      // n’applique pas automatiquement pour éviter de spammer
+    });
   }
+
+  // Boutons export
+  document.addEventListener('click', (e)=>{
+    if (e.target.id === 'export-png')  exportDashboard('png');
+    if (e.target.id === 'export-jpg')  exportDashboard('jpeg');
+  });
 
   console.log('[GAWA] stats JS chargé');
   document.addEventListener('DOMContentLoaded', async ()=>{
     await loadProjects();
     initFilters();
     loadAll();
+  });
+
+  // Cible à capturer (le contenu utile sans le fond animé)
+  function captureTarget() {
+    return document.querySelector('.container') || document.body;
+  }
+
+  async function exportImage(fmt = 'png') {
+    const target = captureTarget();
+    const canvas = await html2canvas(target, { backgroundColor: null, scale: 2, useCORS: true });
+    const mime = fmt === 'jpeg' ? 'image/jpeg' : 'image/png';
+    const dataURL = canvas.toDataURL(mime, fmt === 'jpeg' ? 0.92 : 1);
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = `gawa-stats_${new Date().toISOString().slice(0,10)}.${fmt === 'jpeg' ? 'jpg' : 'png'}`;
+    a.click();
+  }
+
+  async function exportPDF() {
+    const target = captureTarget();
+    const canvas = await html2canvas(target, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
+    const img = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p','pt','a4');
+    const pageW = pdf.internal.pageSize.getWidth();
+    const imgW = pageW - 40;                   // marges 20pt
+    const imgH = canvas.height * imgW / canvas.width;
+    pdf.addImage(img, 'PNG', 20, 20, imgW, imgH, '', 'FAST');
+    pdf.save(`gawa-stats_${new Date().toISOString().slice(0,10)}.pdf`);
+  }
+
+  // Brancher les boutons après le DOMReady
+  document.addEventListener('DOMContentLoaded', ()=>{
+    document.getElementById('export-pdf')?.addEventListener('click', exportPDF);
+    document.getElementById('export-png')?.addEventListener('click', ()=>exportImage('png'));
+    document.getElementById('export-jpg')?.addEventListener('click', ()=>exportImage('jpeg'));
+  });
+
+  // (Optionnel) déclenche la recherche bandeau en live ↓
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const b = document.getElementById('f-banner');
+    let t;
+    b && b.addEventListener('input', ()=>{
+      clearTimeout(t);
+      t = setTimeout(()=> { typeof loadAll === 'function' && loadAll(); }, 350);
+    });
   });
   </script>
 {% endblock %}
