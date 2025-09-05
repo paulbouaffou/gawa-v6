@@ -1,0 +1,282 @@
+{% extends "layout.html" %}
+
+{% block title %}Résultats – GAWA V6{% endblock %}
+
+{% block head %}
+  <style>
+    .results-toolbar .form-label{ font-size:.85rem; opacity:.85; }
+    .results-card { min-height: 420px; }
+    .results-table th { white-space: nowrap; }
+    .results-table td { vertical-align: middle; }
+    .chip { display:inline-block; padding:.15rem .5rem; border-radius:999px; background:var(--bs-secondary-bg); font-size:.8rem; }
+    .status-dot{ width:.6rem; height:.6rem; border-radius:50%; display:inline-block; margin-right:.35rem; }
+    .s-todo{ background:#adb5bd; } .s-in_progress{ background:#ffc107; } .s-done{ background:#198754; }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="m-0">Résultats</h1>
+      <div class="text-muted">Suggestions d’articles, filtrables et exportables</div>
+    </div>
+    <button id="theme-toggle" class="btn btn-sm btn-outline-light">🌙 Mode lune</button>
+  </div>
+
+  <!-- Filtres -->
+  <div class="gawa-card results-toolbar mb-3">
+    <div class="row g-2">
+      <div class="col-lg-4">
+        <label class="form-label">Recherche (titre)</label>
+        <input id="q" type="search" class="form-control" placeholder="ex: football, Abidjan, ...">
+      </div>
+      <div class="col-lg-2">
+        <label class="form-label">Du</label>
+        <input id="from" type="date" class="form-control">
+      </div>
+      <div class="col-lg-2">
+        <label class="form-label">Au</label>
+        <input id="to" type="date" class="form-control">
+      </div>
+      <div class="col-lg-2">
+        <label class="form-label">Projet</label>
+        <select id="project" class="form-select">
+          <option value="">(Tous)</option>
+        </select>
+      </div>
+      <div class="col-lg-2">
+        <label class="form-label">Type de bandeau</label>
+        <input id="banner" class="form-control" list="banners" placeholder="ex: wikifier, sourcer...">
+        <datalist id="banners"></datalist>
+      </div>
+      <div class="col-lg-2">
+        <label class="form-label">Statut</label>
+        <select id="status" class="form-select">
+          <option value="">(Tous)</option>
+          <option value="unassigned">Non assigné</option>
+          <option value="todo">À faire</option>
+          <option value="in_progress">En cours</option>
+          <option value="done">Terminé</option>
+        </select>
+      </div>
+      <div class="col-lg-2">
+        <label class="form-label">Tri</label>
+        <select id="sort" class="form-select">
+          <option value="date_desc">Plus récent</option>
+          <option value="score_desc">Score</option>
+          <option value="views_desc">Vues 30j</option>
+          <option value="length_desc">Longueur</option>
+        </select>
+      </div>
+      <div class="col-lg-2">
+        <label class="form-label">Par page</label>
+        <select id="size" class="form-select">
+          <option>10</option><option selected>20</option><option>50</option><option>100</option>
+        </select>
+      </div>
+      <div class="col-lg-2 d-flex align-items-end">
+        <button id="apply" class="btn btn-primary w-100">Appliquer</button>
+      </div>
+      <div class="col-lg-2 d-flex align-items-end">
+        <button id="export-csv" class="btn btn-outline-secondary w-100">Exporter CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Résultats -->
+  <div class="gawa-card results-card">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle results-table">
+        <thead>
+          <tr>
+            <th>Titre</th>
+            <th>Projet</th>
+            <th>Statut</th>
+            <th class="text-end">Score</th>
+            <th class="text-end">Longueur</th>
+            <th class="text-end">Vues 30j</th>
+            <th class="text-nowrap">Date</th>
+          </tr>
+        </thead>
+        <tbody id="results-body">
+          <tr><td colspan="7" class="text-muted text-center py-4">Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-2">
+      <div class="text-muted">
+        <span id="total">0</span> résultats — page <span id="page">1</span>/<span id="pages">1</span>
+      </div>
+      <div class="btn-group">
+        <button id="prev" class="btn btn-outline-secondary btn-sm">Précédent</button>
+        <button id="next" class="btn btn-outline-secondary btn-sm">Suivant</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="error" class="alert alert-danger mt-3 d-none"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const $ = id => document.getElementById(id);
+
+function buildURL(path, params){
+  const usp = new URLSearchParams();
+  Object.entries(params||{}).forEach(([k,v])=>{
+    if(v!==undefined && v!==null && String(v).trim()!=="") usp.set(k, v);
+  });
+  const qs = usp.toString();
+  return qs ? `${path}?${qs}` : path;
+}
+async function fetchJSON(url){
+  const r = await fetch(url);
+  if(!r.ok) throw new Error(`${r.status} on ${url}`);
+  return r.json();
+}
+function showError(msg){
+  const el = $('error'); el.classList.remove('d-none'); el.textContent = msg || "⚠️ Erreur de chargement.";
+}
+function hideError(){ const el = $('error'); el.classList.add('d-none'); el.textContent = ""; }
+
+async function loadProjects(){
+  try{
+    const data = await fetchJSON('/api/catalog/projects');
+    const sel = $('project');
+    sel.innerHTML = '<option value="">(Tous)</option>';
+    for(const p of (data.projects||[])){
+      const opt = document.createElement('option');
+      opt.value = p.slug; opt.textContent = `${p.slug} — ${p.label}`;
+      sel.appendChild(opt);
+    }
+  }catch(e){ console.warn('projects fail', e); }
+}
+
+let bannerTimer = null;
+async function suggestBanners(q){
+  try{
+    const data = await fetchJSON(buildURL('/api/catalog/banners',{q}));
+    const dl = $('banners'); dl.innerHTML = '';
+    (data.items||[]).forEach(code=>{
+      const opt = document.createElement('option'); opt.value = code; dl.appendChild(opt);
+    });
+  }catch(e){ /* silencieux */ }
+}
+
+async function loadResults(pageOverride){
+  hideError();
+  const q = $('q').value, project = $('project').value, banner = $('banner').value,
+        status = $('status').value, sort = $('sort').value, size = $('size').value,
+        from = $('from').value, to = $('to').value;
+
+  const currentPage = Number($('page').textContent || 1);
+  const page = pageOverride || currentPage || 1;
+
+  const url = buildURL('/api/results/search', {q, project, banner, status, sort, size, page, from, to});
+  const body = $('results-body');
+  body.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-4">Chargement...</td></tr>';
+  try{
+    const data = await fetchJSON(url);
+    $('total').textContent = data.total ?? 0;
+    $('page').textContent = data.page ?? 1;
+    $('pages').textContent = data.pages ?? 1;
+
+    if(!data.items || !data.items.length){
+      body.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-4">Aucun résultat.</td></tr>';
+      return;
+    }
+    body.innerHTML = '';
+    for(const it of data.items){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${it.title ?? ''}</td>
+        <td><span class="chip">${(it.project_label || it.project || '(—)')}</span></td>
+        <td>
+          <span class="status-dot s-${(it.status||'unassigned').replace(' ','_')}"></span>
+          ${(it.status==='unassigned'?'Non assigné':
+             it.status==='todo'?'À faire':
+             it.status==='in_progress'?'En cours':
+             it.status==='done'?'Terminé':'—')}
+        </td>
+        <td class="text-end">${(it.score ?? 0).toFixed(1)}</td>
+        <td class="text-end">${(it.length ?? 0).toLocaleString('fr-FR')}</td>
+        <td class="text-end">${(it.views_30d ?? 0).toLocaleString('fr-FR')}</td>
+        <td class="text-nowrap">${it.date ?? ''}</td>
+      `;
+      body.appendChild(tr);
+    }
+  }catch(e){
+    console.warn('results fail', e);
+    showError("⚠️ Impossible de charger les résultats. Vérifiez que app.py tourne bien.");
+  }
+}
+
+function exportCSV(){
+  const rows = Array.from(document.querySelectorAll('#results-body tr'));
+  if(!rows.length) return;
+  const headers = ["Titre","Projet","Statut","Score","Longueur","Vues_30j","Date"];
+  const data = [headers.join(",")];
+  rows.forEach(tr=>{
+    const tds = tr.querySelectorAll('td');
+    if(tds.length<7) return;
+    const row = [
+      `"${tds[0].textContent.replace(/"/g,'""')}"`,
+      `"${tds[1].textContent.trim()}"`,
+      `"${tds[2].textContent.trim()}"`,
+      tds[3].textContent.trim(),
+      tds[4].textContent.trim(),
+      tds[5].textContent.trim(),
+      `"${tds[6].textContent.trim()}"`
+    ];
+    data.push(row.join(","));
+  });
+  const blob = new Blob([data.join("\n")], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `gawa-results-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+}
+
+(function init(){
+  // thème
+  const KEY='gawa-theme', btn=$('theme-toggle'), root=document.documentElement;
+  function apply(t){ if(t==='dark'){root.setAttribute('data-theme','dark'); btn&&(btn.textContent='☀️ Mode soleil');}
+                     else {root.removeAttribute('data-theme'); btn&&(btn.textContent='🌙 Mode lune');} }
+  function current(){ return localStorage.getItem(KEY) || 'light'; }
+  apply(current());
+  btn && btn.addEventListener('click', ()=>{
+    const next = root.hasAttribute('data-theme') ? 'light' : 'dark';
+    localStorage.setItem(KEY, next); apply(next);
+  });
+
+  // dates par défaut (30 jours)
+  const today = new Date(); const from = new Date(today.getTime()-29*24*3600*1000);
+  $('from').value = from.toISOString().slice(0,10);
+  $('to').value   = today.toISOString().slice(0,10);
+
+  // projets + bdl
+  loadProjects();
+  $('banner').addEventListener('input', (e)=>{
+    const v = e.target.value || ""; clearTimeout(bannerTimer);
+    if(v.length>=2){ bannerTimer = setTimeout(()=>suggestBanners(v), 120); }
+  });
+
+  // actions
+  $('apply').addEventListener('click', ()=>loadResults(1));
+  $('prev').addEventListener('click', ()=>{
+    const p = Math.max(1, (Number($('page').textContent)||1)-1);
+    loadResults(p);
+  });
+  $('next').addEventListener('click', ()=>{
+    const p = Math.min(Number($('pages').textContent)||1, (Number($('page').textContent)||1)+1);
+    loadResults(p);
+  });
+  $('export-csv').addEventListener('click', exportCSV);
+
+  // charge initial
+  loadResults(1);
+})();
+</script>
+{% endblock %}
