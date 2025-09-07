@@ -8,9 +8,11 @@ GAWA V6 – App Flask + SQLModel (SQLite)
 """
 from __future__ import annotations
 
+import os
+import re
 import io
 import csv
-from collections import Counter, OrderedDict
+from collections import Counter, OrderedDict, deque
 from datetime import datetime, timedelta, date, timezone
 from typing import Optional, Dict, Any, List, Tuple
 from uuid import uuid4
@@ -25,6 +27,14 @@ from sqlalchemy import func, asc, desc, or_
 DB_URL = "sqlite:///gawa.db"
 engine = create_engine(DB_URL, echo=False, connect_args={"check_same_thread": False})
 app = Flask(__name__)
+
+# Sécurité export CSV admin (démo / simple)
+ADMIN_TOKEN = os.getenv("GAWA_ADMIN_TOKEN", "devtoken")
+
+# Throttle simple (en mémoire) : max 5 soumissions / heure / IP
+RL_MAX = 5
+RL_WINDOW_SEC = 3600  # 1 heure
+RATE_BUCKETS: dict[str, deque] = {}
 
 # -----------------------------
 # Helpers généraux
@@ -63,6 +73,31 @@ def _get_float(name: str, default: float = 0.0, minv: Optional[float] = None, ma
     if maxv is not None and v > maxv:
         v = maxv
     return v
+
+def get_client_ip() -> str:
+    fwd = request.headers.get("X-Forwarded-For")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.remote_addr or "0.0.0.0"
+
+def throttle_check(ip: str) -> bool:
+    """
+    Retourne True si autorisé, False si limité.
+    """
+    from time import time
+    now = time()
+    q = RATE_BUCKETS.setdefault(ip, deque())
+    # purge ancienne fenêtre
+    while q and (now - q[0] > RL_WINDOW_SEC):
+        q.popleft()
+    if len(q) >= RL_MAX:
+        return False
+    q.append(now)
+    return True
+
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+def is_valid_email(s: str) -> bool:
+    return bool(EMAIL_RE.match(s or ""))
 
 # -----------------------------
 # Modèles
@@ -106,6 +141,22 @@ class Assignment(SQLModel, table=True):
     status: str = Field(default="todo", index=True)  # todo | in_progress | done
     created_at: datetime = Field(default_factory=utcnow, index=True)
     updated_at: datetime = Field(default_factory=utcnow, index=True)
+
+class Contributor(SQLModel, table=True):
+    id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True, index=True)
+    full_name: str = Field(index=True)
+    email: str = Field(index=True)
+    username: Optional[str] = None
+    skills: Optional[str] = None
+    availability: Optional[str] = None
+    notes: Optional[str] = None
+    # Anti-spam / méta
+    ip: Optional[str] = None
+    user_agent: Optional[str] = None
+    is_spam: bool = Field(default=False, index=True)
+    created_at: datetime = Field(default_factory=utcnow, index=True)
+    updated_at: datetime = Field(default_factory=utcnow, index=True)
+
 
 # -----------------------------
 # Catalogue WikiProjets
@@ -293,6 +344,10 @@ def stats_page():
 def results_page():
     return render_template("results.html")
 
+@app.get("/contribute")
+def contribute_page():
+    return render_template("contribute.html")
+
 # -----------------------------
 # API stats (inchangé)
 # -----------------------------
@@ -423,7 +478,66 @@ def api_quality():
     })
 
 # -----------------------------
-# API résultats — compatible avec ton gabarit
+# API POST api/contributors (validations + honeypot + throttle)
+# -----------------------------
+# --- Création contributeur (unique) ---
+@app.post("/api/contributors")
+def api_contributors_create():
+    # Honeypot anti-spam (champ caché côté front, ex: name="website")
+    if (request.form.get("website") or (request.json or {}).get("website")):
+        return jsonify({"ok": True}), 200  # on “avale” calmement
+
+    data = (request.get_json(silent=True) or request.form.to_dict() or {})
+    full_name = (data.get("full_name") or "").strip()
+    email     = (data.get("email") or "").strip().lower()
+    username  = (data.get("username") or "").strip() or None
+    skills    = (data.get("skills") or "").strip() or None
+    availability = (data.get("availability") or "").strip() or None
+    notes     = (data.get("notes") or "").strip() or None
+
+    # Validations
+    errors = []
+    if not full_name:
+        errors.append("Le nom complet est requis.")
+    if not email or "@" not in email:
+        errors.append("Email invalide.")
+    if errors:
+        return jsonify({"ok": False, "errors": errors}), 400
+
+    # Throttle IP (ex: 60s)
+    ip = (request.headers.get("X-Forwarded-For") or request.remote_addr or "")[:45]
+    ua = (request.headers.get("User-Agent") or "")[:255]
+    now = datetime.now(timezone.utc)
+
+    with Session(engine) as s:
+        last = s.exec(
+            select(Contributor)
+            .where(Contributor.ip == ip)
+            .order_by(Contributor.created_at.desc())
+        ).first()
+        if last and (now - last.created_at).total_seconds() < 60:
+            return jsonify({"ok": False, "errors": ["Trop de requêtes, réessayez plus tard."]}), 429
+
+        c = Contributor(
+            full_name=full_name,
+            email=email,
+            username=username,
+            skills=skills,
+            availability=availability,
+            notes=notes,
+            ip=ip,
+            user_agent=ua,
+            is_spam=False,
+            created_at=now,
+            updated_at=now,
+        )
+        s.add(c)
+        s.commit()
+
+    return jsonify({"ok": True})
+
+# -----------------------------
+# API résultats — compatible avec mon gabarit
 # -----------------------------
 def _order_clause(sort_key: str):
     mapping = {
@@ -453,7 +567,7 @@ def api_results_search():
 
     order_clause = _order_clause(sort)
 
-    # LEFT JOIN sur Assignment pour pouvoir déduire le statut ; on déduplique ensuite côté Python
+    # LEFT JOIN sur Assignment pour pouvoir déduire le statut ;
     stmt = (
         select(Suggestion, Article, Query, Assignment.status)
         .join(Article, Suggestion.article_id == Article.id)
@@ -545,6 +659,79 @@ def api_results_search():
         "size": size,
         "items": items
     })
+
+def _clean_list_csv(val: Any) -> list[str]:
+    """Accepte liste ou 'a,b,c' -> ['a','b','c'] (trim + minuscule uniques)."""
+    if val is None:
+        return []
+    if isinstance(val, list):
+        raw = val
+    else:
+        raw = str(val).split(',')
+    out = []
+    for x in raw:
+        t = str(x).strip()
+        if t:
+            out.append(t)
+    # unicité et normalisation
+    seen = set()
+    normed = []
+    for t in out:
+        k = t.lower()
+        if k not in seen:
+            seen.add(k)
+            normed.append(t)
+    return normed
+
+def _validate_email(s: str) -> bool:
+    try:
+        import re
+        return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", s or ""))
+    except Exception:
+        return False
+
+# UI : page formulaire
+@app.get("/contributors/new")
+def contributor_form_page():
+    return render_template("contributor_form.html")
+
+@app.get("/admin/contributors.csv")
+def admin_contributors_csv():
+    # Auth simplifiée par token (en démo) : ?token=xxx ou header X-Admin-Token
+    token = request.args.get("token") or request.headers.get("X-Admin-Token", "")
+    if token != ADMIN_TOKEN:
+        return jsonify({"ok": False, "error": "Non autorisé"}), 403
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "id","created_at","updated_at","full_name","email","username","skills",
+        "availability","notes","ip","user_agent","is_spam"
+    ])
+
+    with Session(engine) as s:
+        rows = s.exec(select(Contributor).order_by(Contributor.created_at.desc())).all()
+        for c in rows:
+            writer.writerow([
+                c.id,
+                (c.created_at or "").isoformat(),
+                (c.updated_at or "").isoformat(),
+                c.full_name or "",
+                c.email or "",
+                c.username or "",
+                c.skills or "",
+                c.availability or "",
+                (c.notes or "").replace("\n"," ").replace("\r"," "),
+                c.ip or "",
+                (c.user_agent or "").replace("\n"," "),
+                "1" if c.is_spam else "0",
+            ])
+
+    csv_bytes = output.getvalue().encode("utf-8")
+    from flask import Response
+    resp = Response(csv_bytes, mimetype="text/csv; charset=utf-8")
+    resp.headers["Content-Disposition"] = f'attachment; filename=contributors-{datetime.now().date()}.csv'
+    return resp
 
 # -----------------------------
 # Favicon (supprime le 404 bruyant)

@@ -374,3 +374,70 @@ h1, h2, h3, h4 { letter-spacing: .2px; }
 
 /* Optionnel: largeur mini confortable pour les filtres sur très petits écrans */
 #f-project, #f-banner { min-width: 180px; }
+/* —— Contributeur: harmonisation légère —— */
+[data-theme="dark"] .group input,
+[data-theme="dark"] .group textarea {
+  border-bottom-color: rgba(255,255,255,.25);
+}
+[data-theme="dark"] .group label {
+  color: rgba(255,255,255,.7);
+}
+/* === Formulaires : mode sombre lisible === */
+:root[data-theme="dark"] { color-scheme: dark; }
+
+/* Textes des champs */
+[data-theme="dark"] .group input[type="text"],
+[data-theme="dark"] .group input[type="email"],
+[data-theme="dark"] .group input[type="search"],
+[data-theme="dark"] .group textarea,
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] .form-select {
+  color: #f8f9fa !important;
+  caret-color: #f8f9fa;
+  background-color: transparent; /* garder le style “ligne” */
+  border-color: rgba(255,255,255,.25);
+}
+
+/* Libellés flottants et placeholders */
+[data-theme="dark"] .group label { color: rgba(255,255,255,.75); }
+[data-theme="dark"] ::placeholder { color: rgba(255,255,255,.55); opacity: 1; }
+
+/* Barre animée sous les champs (focus) */
+[data-theme="dark"] .bar:before,
+[data-theme="dark"] .bar:after {
+  background: var(--bs-primary, #0d6efd);
+}
+
+/* Focus visibles (sans halo bleu agressif) */
+[data-theme="dark"] .group input:focus,
+[data-theme="dark"] .group textarea:focus,
+[data-theme="dark"] .form-select:focus,
+[data-theme="dark"] input[type="date"]:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: rgba(13,110,253,.6);
+}
+
+/* Sélecteur (projets, disponibilité) fond/texte corrects */
+[data-theme="dark"] .form-select {
+  background-color: rgba(255,255,255,.06);
+  color: #f8f9fa;
+  border-color: rgba(255,255,255,.25);
+}
+
+/* Chrome/Edge/Safari : corriger l’autofill (qui met du texte clair sur fond clair) */
+[data-theme="dark"] input:-webkit-autofill,
+[data-theme="dark"] textarea:-webkit-autofill,
+[data-theme="dark"] select:-webkit-autofill {
+  -webkit-text-fill-color: #f8f9fa !important;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(255,255,255,.08) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Firefox autofill */
+[data-theme="dark"] input:-moz-autofill,
+[data-theme="dark"] textarea:-moz-autofill,
+[data-theme="dark"] select:-moz-autofill {
+  box-shadow: 0 0 0px 1000px rgba(255,255,255,.08) inset;
+  -moz-text-fill-color: #f8f9fa;
+}

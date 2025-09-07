@@ -1,0 +1,263 @@
+{% extends "layout.html" %}
+
+{% block title %}Devenir Contributeur – GAWA V6{% endblock %}
+
+{% block head %}
+<style>
+  /* ——— Style inputs façon CodePen (floating labels) ——— */
+  .group { position: relative; margin: 1.25rem 0; }
+  .group input[type="text"],
+  .group input[type="email"],
+  .group input[type="search"],
+  .group textarea {
+    font-size: 1rem;
+    padding: .75rem .75rem .75rem .5rem;
+    display: block;
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--bs-border-color, #ced4da);
+    background: transparent;
+    color: var(--bs-body-color);
+    outline: none;
+  }
+  .group textarea { min-height: 110px; resize: vertical; }
+  .group label {
+    color: var(--bs-secondary-color);
+    font-size: .95rem;
+    position: absolute;
+    pointer-events: none;
+    left: .5rem;
+    top: .85rem;
+    transition: 0.2s ease all;
+  }
+  .group input:focus ~ label,
+  .group input:not(:placeholder-shown) ~ label,
+  .group textarea:focus ~ label,
+  .group textarea:not(:placeholder-shown) ~ label {
+    top: -0.6rem; font-size: .8rem; opacity: .85;
+  }
+  .bar { position: relative; display: block; width: 100%; }
+  .bar:before, .bar:after {
+    content: '';
+    height: 2px;
+    width: 0;
+    bottom: 0; position: absolute;
+    background: var(--bs-primary, #0d6efd);
+    transition: 0.2s ease all;
+  }
+  .bar:before { left: 50%; }
+  .bar:after  { right: 50%; }
+  .group input:focus ~ .bar:before,
+  .group input:focus ~ .bar:after,
+  .group textarea:focus ~ .bar:before,
+  .group textarea:focus ~ .bar:after { width: 50%; }
+
+  /* Sélecteurs natifs (projets, disponibilité) */
+  .form-select, .form-check-input { border-radius: .5rem; }
+
+  /* Carte */
+  .form-card { max-width: 880px; margin: 0 auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="m-0">Devenir Contributeur</h1>
+    <div class="text-muted">Rejoignez GAWA : dites-nous qui vous êtes et comment vous voulez aider.</div>
+  </div>
+  <button id="theme-toggle" class="btn btn-sm btn-outline-light">🌙 Mode lune</button>
+</div>
+
+<div class="gawa-card form-card">
+  <form id="contrib-form" novalidate>
+    <!-- Honeypot anti-spam (caché) -->
+    <input type="text" name="homepage" id="homepage" class="d-none" tabindex="-1" autocomplete="off">
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="group">
+          <input id="display_name" name="display_name" type="text" required placeholder=" " />
+          <label for="display_name">Nom complet *</label>
+          <span class="bar"></span>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="group">
+          <input id="email" name="email" type="email" required placeholder=" " />
+          <label for="email">Email *</label>
+          <span class="bar"></span>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="group">
+          <input id="wiki_username" name="wiki_username" type="text" placeholder=" " />
+          <label for="wiki_username">Pseudo Wikipédia (optionnel)</label>
+          <span class="bar"></span>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Projets d’intérêt *</label>
+        <select id="projects" name="projects" class="form-select" multiple required></select>
+        <div class="form-text">Maintenir Ctrl / Cmd pour multi-sélectionner.</div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="group">
+          <input id="skills" name="skills" type="text" placeholder=" " />
+          <label for="skills">Compétences (ex: wikifier, sourcer, neutraliser…)</label>
+          <span class="bar"></span>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label d-block">Disponibilité (indicative)</label>
+        <select id="availability" name="availability" class="form-select">
+          <option value="">(non précisé)</option>
+          <option value="<2h">&lt; 2h / semaine</option>
+          <option value="2-5h">2–5h / semaine</option>
+          <option value="5-10h">5–10h / semaine</option>
+          <option value=">10h">&gt;10h / semaine</option>
+        </select>
+      </div>
+
+      <div class="col-12">
+        <div class="group">
+          <textarea id="message" name="message" placeholder=" "></textarea>
+          <label for="message">Message (motivations, sujets, horaires…)</label>
+          <span class="bar"></span>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="contact_optin" name="contact_optin" value="1">
+          <label class="form-check-label" for="contact_optin">
+            J’accepte d’être recontacté·e au sujet de contributions GAWA.
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+      <button class="btn btn-primary" type="submit" id="submit-btn">Envoyer</button>
+      <button class="btn btn-outline-secondary" type="reset">Réinitialiser</button>
+    </div>
+
+    <div id="form-alert" class="alert mt-3 d-none"></div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const $ = (id) => document.getElementById(id);
+
+function flash(type, msg){
+  const el = $('form-alert');
+  el.className = `alert mt-3 alert-${type}`;
+  el.textContent = msg || '';
+  if(!msg){ el.classList.add('d-none'); } else { el.classList.remove('d-none'); }
+}
+
+async function fetchJSON(url){
+  const r = await fetch(url);
+  if(!r.ok) throw new Error(`${r.status} on ${url}`);
+  return r.json();
+}
+
+async function loadProjects(){
+  try{
+    const data = await fetchJSON('/api/catalog/projects');
+    const sel = $('projects');
+    sel.innerHTML = '';
+    for(const p of (data.projects || [])){
+      const opt = document.createElement('option');
+      opt.value = p.slug;
+      opt.textContent = `${p.slug} — ${p.label}`;
+      sel.appendChild(opt);
+    }
+  }catch(e){
+    console.warn('projects fetch fail', e);
+  }
+}
+
+function getSelectedProjects(){
+  return Array.from($('projects').selectedOptions).map(o => o.value).filter(Boolean);
+}
+
+function validate(){
+  const errs = {};
+  if(!$('display_name').value.trim()) errs.display_name = 'Nom requis';
+  const email = $('email').value.trim();
+  if(!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errs.email = 'Email invalide';
+  if(getSelectedProjects().length === 0) errs.projects = 'Choisir au moins un projet';
+  return errs;
+}
+
+async function submitForm(e){
+  e.preventDefault();
+  flash('', '');
+  const errs = validate();
+  if(Object.keys(errs).length){
+    flash('warning', Object.values(errs).join(' • '));
+    return;
+  }
+  // honeypot
+  if ($('homepage').value.trim()){
+    flash('success', '✅ Merci ! (spam ignoré)');
+    e.target.reset();
+    return;
+  }
+
+  const fd = new FormData();
+  fd.set('display_name',$('display_name').value.trim());
+  fd.set('email', $('email').value.trim());
+  const projects = getSelectedProjects();
+  fd.set('projects', projects.join(','));
+  if($('wiki_username').value.trim()) fd.set('wiki_username',$('wiki_username').value.trim());
+  if($('skills').value.trim()) fd.set('skills',$('skills').value.trim());
+  if($('availability').value) fd.set('availability',$('availability').value);
+  if($('message').value.trim()) fd.set('message',$('message').value.trim());
+  if($('contact_optin').checked) fd.set('contact_optin','1');
+
+  const btn = $('submit-btn'); btn.disabled = true; btn.textContent = 'Envoi…';
+  try{
+    const r = await fetch('/api/contributors', { method:'POST', body: fd });
+    const data = await r.json().catch(()=>({}));
+    if(r.status === 201 && data.ok){
+      flash('success', '✅ Merci ! Votre candidature a été enregistrée.');
+      e.target.reset();
+    } else if(r.status === 400){
+      const m = data?.errors ? Object.values(data.errors).join(' • ') : 'Champs invalides.';
+      flash('warning', '⚠️ ' + m);
+    } else {
+      flash('danger', '❌ Erreur serveur. Réessayez plus tard.');
+    }
+  }catch(err){
+    console.error(err);
+    flash('danger', '❌ Réseau indisponible.');
+  }finally{
+    btn.disabled = false; btn.textContent = 'Envoyer';
+  }
+}
+
+(function init(){
+  // thème
+  const KEY='gawa-theme', btn=$('theme-toggle'), root=document.documentElement;
+  function apply(t){ if(t==='dark'){root.setAttribute('data-theme','dark'); btn&&(btn.textContent='☀️ Mode soleil');}
+                     else {root.removeAttribute('data-theme'); btn&&(btn.textContent='🌙 Mode lune');} }
+  function current(){ return localStorage.getItem(KEY) || 'light'; }
+  apply(current());
+  btn && btn.addEventListener('click', ()=>{
+    const next = root.hasAttribute('data-theme') ? 'light' : 'dark';
+    localStorage.setItem(KEY, next); apply(next);
+  });
+
+  loadProjects();
+  $('contrib-form').addEventListener('submit', submitForm);
+})();
+</script>
+{% endblock %}
