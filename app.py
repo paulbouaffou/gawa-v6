@@ -344,9 +344,13 @@ def stats_page():
 def results_page():
     return render_template("results.html")
 
+# Formulaire Contributeur — tous les alias pointent vers LA MÊME fonction
+@app.get("/contributors")
+@app.get("/contributor-form")
 @app.get("/contribute")
-def contribute_page():
-    return render_template("contribute.html")
+@app.get("/contributors/new")
+def contributor_form_page():
+    return render_template("contributor_form.html")  # assure-toi que ce fichier existe
 
 # -----------------------------
 # API stats (inchangé)
@@ -691,10 +695,6 @@ def _validate_email(s: str) -> bool:
         return False
 
 # UI : page formulaire
-@app.get("/contributors/new")
-def contributor_form_page():
-    return render_template("contributor_form.html")
-
 @app.get("/admin/contributors.csv")
 def admin_contributors_csv():
     # Auth simplifiée par token (en démo) : ?token=xxx ou header X-Admin-Token
